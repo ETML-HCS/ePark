@@ -28,6 +28,15 @@
                     @endforeach
                 </select>
             </div>
+            <div class="mb-3">
+                <label for="battement" class="form-label">Battement (marge en minutes)</label>
+                <select id="battement" name="battement" class="form-control" required>
+                    <option value="0" {{ old('battement', '0') == '0' ? 'selected' : '' }}>0 minutes</option>
+                    <option value="10" {{ old('battement') == '10' ? 'selected' : '' }}>10 minutes</option>
+                    <option value="15" {{ old('battement') == '15' ? 'selected' : '' }}>15 minutes</option>
+                    <option value="20" {{ old('battement') == '20' ? 'selected' : '' }}>20 minutes</option>
+                </select>
+            </div>
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" id="paiement_effectue" name="paiement_effectue">
                 <label class="form-check-label" for="paiement_effectue">Paiement effectué (optionnel)</label>

@@ -77,21 +77,16 @@ class ReservationController extends Controller
             'place_id' => 'required|exists:places,id',
             'date' => 'required|date',
             'start_hour' => ['required', 'regex:/^([01]\d|2[0-3]):00$/'],
+            'battement' => 'required|integer|in:0,10,15,20',
         ]);
 
         // Construire les datetimes de début/fin (créneau d'1 heure)
         $start = \Carbon\Carbon::parse($validated['date'].' '.$validated['start_hour']);
         $end = $start->copy()->addHour();
 
-        // Vérifier chevauchement pour la même place
-        $conflict = \App\Models\Reservation::where('place_id', $validated['place_id'])
-            ->where(function($q) use ($start, $end) {
-                $q->where('date_debut', '<', $end)
-                  ->where('date_fin', '>', $start);
-            })->exists();
-
-        if ($conflict) {
-            return back()->withInput()->withErrors(['place_id' => 'Le créneau sélectionné est déjà réservé pour cette place.']);
+        // Vérifier chevauchement pour la même place en incluant les battements
+        if (\App\Models\Reservation::overlaps($validated['place_id'], $start, $end, $validated['battement'])) {
+            return back()->withInput()->withErrors(['place_id' => 'Le créneau sélectionné (avec battement) chevauche une réservation existante pour cette place.']);
         }
 
         $reservation = \App\Models\Reservation::create([
@@ -100,6 +95,7 @@ class ReservationController extends Controller
             'date_debut' => $start,
             'date_fin' => $end,
             'statut' => 'en_attente',
+            'battement_minutes' => $validated['battement'],
             'paiement_effectue' => $request->has('paiement_effectue'),
         ]);
 
