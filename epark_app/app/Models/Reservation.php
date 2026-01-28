@@ -13,13 +13,16 @@ class Reservation extends Model
         'date_fin',
         'statut',
         'battement_minutes',
-        'paiement_effectue', // paiement optionnel
+        'amount_cents',
+        'payment_status',
+        'paiement_effectue', // temporaire, à supprimer plus tard
     ];
 
     protected $casts = [
         'date_debut' => 'datetime',
         'date_fin' => 'datetime',
         'battement_minutes' => 'integer',
+        'amount_cents' => 'integer',
         'paiement_effectue' => 'boolean',
     ];
 
@@ -31,6 +34,11 @@ class Reservation extends Model
     public function place()
     {
         return $this->belongsTo(Place::class);
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
     }
 
     /**
