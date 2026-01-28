@@ -1,0 +1,36 @@
+# .gitignore Laravel
+
+/vendor/
+/node_modules/
+.env
+.env.*
+/public/storage
+/storage/*.key
+/storage/app/public
+/.idea/
+/.vscode/
+.DS_Store
+Thumbs.db
+*.log
+*.sqlite
+.phpunit.result.cache
+.php-cs-fixer.cache
+composer.lock
+yarn.lock
+npm-debug.log
+
+# Cache et fichiers temporaires
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+
+# Autres fichiers à ignorer
+/public/hot
+/public/mix-manifest.json
+/public/css/app.css
+/public/js/app.js
+
+# Système
+*.swp
+*.swo
