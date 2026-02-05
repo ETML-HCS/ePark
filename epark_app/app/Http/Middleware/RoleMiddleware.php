@@ -17,8 +17,9 @@ class RoleMiddleware
      * roles attendus : 'locataire', 'proprietaire', 'les deux'
      * Utilisation : route->middleware('role:proprietaire')
      */
-    public function handle(Request $request, Closure $next, ...$roles): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
+        /** @var \App\Models\User|null $user */
         $user = $request->user();
         if (! $user) {
             abort(403, 'Non authentifié.');

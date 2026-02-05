@@ -17,17 +17,55 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@epark.local'],
+            [
+                'name' => 'Admin ePark',
+                'password' => bcrypt('admin123'),
+                'role' => 'admin',
+            ]
+        );
+
+        $initialSites = [
+            ['nom' => 'Centre-ville', 'adresse' => '1 Rue Centrale'],
+            ['nom' => 'Gare', 'adresse' => '10 Avenue de la Gare'],
+            ['nom' => 'Aéroport', 'adresse' => 'Terminal 1'],
+        ];
+
+        foreach ($initialSites as $siteData) {
+            \App\Models\Site::updateOrCreate(
+                ['nom' => $siteData['nom']],
+                [
+                    'adresse' => $siteData['adresse'],
+                    'user_id' => $admin->id,
+                ]
+            );
+        }
+
+        $user = User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => bcrypt('password'),
+            ]
+        );
+
+        $site = \App\Models\Site::updateOrCreate(
+            ['nom' => 'Parking Test'],
+            [
+                'adresse' => '1 rue de la Paix, Paris',
+                'user_id' => $user->id,
+            ]
+        );
 
         // Créer une place liée à ce user
-        \App\Models\Place::create([
-            'user_id' => $user->id,
-            'adresse' => '1 rue de la Paix, Paris',
-            'description' => 'Place couverte, accès badge',
-            'disponible' => true,
-        ]);
+        \App\Models\Place::updateOrCreate(
+            ['site_id' => $site->id, 'nom' => 'A-1'],
+            [
+                'user_id' => $user->id,
+                'caracteristiques' => 'Place couverte, accès badge',
+                'is_active' => true,
+            ]
+        );
     }
 }

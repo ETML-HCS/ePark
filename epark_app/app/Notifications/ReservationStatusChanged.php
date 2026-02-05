@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Reservation;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -10,18 +11,18 @@ class ReservationStatusChanged extends Notification
 {
     use Queueable;
 
-    protected $reservation;
+    protected Reservation $reservation;
 
-    protected $statut;
+    protected string $statut;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($reservation, $statut)
+    public function __construct(Reservation $reservation, string $statut)
     {
         $this->reservation = $reservation;
         $this->statut = $statut;
-    }
+     }
 
     /**
      * Get the notification's delivery channels.
@@ -38,10 +39,13 @@ class ReservationStatusChanged extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        /** @var \App\Models\User $user */
+        $user = $notifiable;
+
         return (new MailMessage)
             ->subject('Statut de votre réservation modifié')
-            ->greeting('Bonjour '.$notifiable->name)
-            ->line('Le statut de votre réservation pour la place "'.($this->reservation->place->nom ?? '').'" a été modifié.')
+            ->greeting('Bonjour '.$user->name)
+            ->line('Le statut de votre réservation pour la place "'.(optional($this->reservation->place)->nom ?? '').'" a été modifié.')
             ->line('Nouveau statut : '.$this->statut)
             ->action('Voir mes réservations', url('/reservations'))
             ->line('Merci d’utiliser ePark !');

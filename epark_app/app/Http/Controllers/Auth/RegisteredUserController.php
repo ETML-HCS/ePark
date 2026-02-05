@@ -10,7 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\View\View;
+use Illuminate\Contracts\View\View;
+use App\Models\Site;
 
 class RegisteredUserController extends Controller
 {
@@ -19,7 +20,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        $sites = Site::orderBy('nom')->get();
+
+        return view('auth.register', compact('sites'));
     }
 
     /**
@@ -33,12 +36,23 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'favorite_site_id' => ['required'],
         ]);
+
+        $favoriteSiteId = $request->input('favorite_site_id');
+        if ($favoriteSiteId !== 'other') {
+            $request->validate([
+                'favorite_site_id' => ['exists:sites,id'],
+            ]);
+        } else {
+            $favoriteSiteId = null;
+        }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'favorite_site_id' => $favoriteSiteId,
+            'password' => Hash::make($request->input('password')),
         ]);
 
         event(new Registered($user));

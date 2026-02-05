@@ -2,8 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
+/**
+ * App\Models\Reservation
+ *
+ * @property int $id
+ * @property int $user_id
+ * @property int $place_id
+ * @property string $statut
+ * @property Carbon $date_debut
+ * @property Carbon $date_fin
+ * @property int $battement_minutes
+ * @property int $amount_cents
+ * @property string $payment_status
+ * @property bool $paiement_effectue
+ * @property Place $place
+ * @property User $user
+ * @property Payment|null $payment
+ */
 class Reservation extends Model
 {
     protected $fillable = [
@@ -15,7 +36,8 @@ class Reservation extends Model
         'battement_minutes',
         'amount_cents',
         'payment_status',
-        'paiement_effectue', // temporaire, à supprimer plus tard
+        'paiement_effectue',
+        'owner_message',
     ];
 
     protected $casts = [
@@ -26,52 +48,129 @@ class Reservation extends Model
         'paiement_effectue' => 'boolean',
     ];
 
-    public function user()
+    // -------------------------------------------------------------------------
+    // Relations
+    // -------------------------------------------------------------------------
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function place()
+    public function place(): BelongsTo
     {
         return $this->belongsTo(Place::class);
     }
 
-    public function payment()
+    public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
     }
 
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(Feedback::class);
+    }
+
+    // -------------------------------------------------------------------------
+    // Scopes
+    // -------------------------------------------------------------------------
+
+    /**
+     * Filtre les réservations en attente.
+     */
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('statut', 'en_attente');
+    }
+
+    /**
+     * Filtre les réservations terminées (confirmées et passées).
+     */
+    public function scopeCompleted(Builder $query): Builder
+    {
+        return $query->where('statut', 'confirmée')
+            ->where('date_fin', '<', now());
+    }
+
+    /**
+     * Filtre les réservations confirmées.
+     */
+    public function scopeConfirmed(Builder $query): Builder
+    {
+        return $query->where('statut', 'confirmée');
+    }
+
+    /**
+     * Filtre les réservations actives (non annulées).
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNotIn('statut', ['annulée']);
+    }
+
+    /**
+     * Filtre les réservations pour une place donnée.
+     */
+    public function scopeForPlace(Builder $query, int $placeId): Builder
+    {
+        return $query->where('place_id', $placeId);
+    }
+
+    /**
+     * Filtre les réservations pour un propriétaire de places.
+     */
+    public function scopeForOwner(Builder $query, int $userId): Builder
+    {
+        return $query->whereHas('place', fn($q) => $q->where('user_id', $userId));
+    }
+
+    // -------------------------------------------------------------------------
+    // Méthodes métier
+    // -------------------------------------------------------------------------
+
+    /**
+     * Calcule la date de fin effective incluant le battement.
+     */
+    public function getEffectiveEndTime(): Carbon
+    {
+        return $this->date_fin->copy()->addMinutes($this->battement_minutes ?? 0);
+    }
+
+    /**
+     * Vérifie si la réservation est payée.
+     */
+    public function isPaid(): bool
+    {
+        return $this->payment_status === 'paid';
+    }
+
+    /**
+     * Vérifie si la réservation peut être confirmée.
+     */
+    public function canBeConfirmed(): bool
+    {
+        return $this->statut === 'en_attente' && $this->isPaid();
+    }
+
     /**
      * Vérifie si un créneau chevauche des réservations existantes pour une place donnée.
-     * Prend en compte les battements (marge) demandés et accordés.
-     *
-     * @param int $placeId
-     * @param \Illuminate\Support\Carbon $start
-     * @param \Illuminate\Support\Carbon $end
-     * @param int $battementMinutes battement demandé pour la nouvelle réservation
-     * @param int|null $excludeId id de réservation à exclure (pour update)
-     * @return bool
+     * Utilise une requête SQL optimisée au lieu de charger toutes les réservations en mémoire.
      */
-    public static function overlaps(int $placeId, $start, $end, int $battementMinutes = 0, ?int $excludeId = null): bool
+    public static function overlaps(int $placeId, Carbon $start, Carbon $end, int $battementMinutes = 0, ?int $excludeId = null): bool
     {
         $newEnd = $end->copy()->addMinutes($battementMinutes);
 
-        $reservations = self::where('place_id', $placeId)
+        // Requête SQL optimisée avec calcul du battement directement en base
+        return self::query()
+            ->where('place_id', $placeId)
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
-            ->get();
-
-        foreach ($reservations as $r) {
-            $existingStart = $r->date_debut;
-            $existingEnd = $r->date_fin->copy();
-            if (!empty($r->battement_minutes)) {
-                $existingEnd = $existingEnd->addMinutes($r->battement_minutes);
-            }
-
-            if ($existingStart < $newEnd && $existingEnd > $start) {
-                return true;
-            }
-        }
-
-        return false;
+            ->active()
+            ->where(function ($query) use ($start, $newEnd) {
+                // Chevauchement: existing.start < new.end AND existing.end > new.start
+                $query->where('date_debut', '<', $newEnd)
+                    ->whereRaw('DATE_ADD(date_fin, INTERVAL COALESCE(battement_minutes, 0) MINUTE) > ?', [$start]);
+            })
+            ->exists();
     }
 }

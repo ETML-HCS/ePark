@@ -1,52 +1,82 @@
 <?php
 
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\PlaceAvailabilityController;
+use App\Http\Controllers\PlaceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\SiteController;
 use Illuminate\Support\Facades\Route;
 
-// Accueil : liste des places disponibles
-Route::get('/', [App\Http\Controllers\PlaceController::class, 'index'])->name('home');
-
-// Dashboard utilisateur (places proposées, réservations)
-Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth'])
-    ->name('dashboard');
-
-// Proposer une place (auth obligatoire)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/places/create', [App\Http\Controllers\PlaceController::class, 'create'])->name('places.create');
-    Route::post('/places', [App\Http\Controllers\PlaceController::class, 'store'])->name('places.store');
-});
-
-// Réserver une place (auth obligatoire)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/reservations/create', [App\Http\Controllers\ReservationController::class, 'create'])->name('reservations.create');
-    Route::post('/reservations', [App\Http\Controllers\ReservationController::class, 'store'])->name('reservations.store');
-    // Validation/refus/annulation
-    Route::post('/reservations/{id}/valider', [App\Http\Controllers\ReservationController::class, 'valider'])->name('reservations.valider');
-    Route::post('/reservations/{id}/refuser', [App\Http\Controllers\ReservationController::class, 'refuser'])->name('reservations.refuser');
-    Route::delete('/reservations/{id}', [App\Http\Controllers\ReservationController::class, 'destroy'])->name('reservations.destroy');
-});
-
-// Mes réservations et mes places (auth obligatoire)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/reservations', [App\Http\Controllers\ReservationController::class, 'index'])->name('reservations.index');
-    Route::get('/places', [App\Http\Controllers\PlaceController::class, 'mesPlaces'])->name('places.mes');
-});
-
-// Sites (propriétaires) - gestion des sites
-Route::middleware(['auth'])->group(function () {
-    Route::get('/sites', [App\Http\Controllers\SiteController::class, 'index'])->name('sites.index');
-    Route::get('/sites/create', [App\Http\Controllers\SiteController::class, 'create'])->name('sites.create');
-    Route::post('/sites', [App\Http\Controllers\SiteController::class, 'store'])->name('sites.store');
-});
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
 // ---------------------------------------------------------
-// Profil Utilisateur
+// Routes Publiques
 // ---------------------------------------------------------
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+Route::get('/', [PlaceController::class, 'index'])->name('home');
 
 require __DIR__.'/auth.php';
+
+// ---------------------------------------------------------
+// Routes Protégées (Authentification requise)
+// ---------------------------------------------------------
+Route::middleware(['auth'])->group(function () {
+    Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding.index');
+    Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
+});
+
+Route::middleware(['auth', 'onboarded'])->group(function () {
+
+    // --- Dashboard ---
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // --- Back-office admin ---
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
+
+    // --- Gestion des Places ---
+    Route::get('/places', [PlaceController::class, 'mesPlaces'])->name('places.mes');
+    Route::get('/places/create', [PlaceController::class, 'create'])->name('places.create');
+    Route::post('/places', [PlaceController::class, 'store'])->name('places.store');
+
+    // Disponibilités des places
+    Route::prefix('/places/{place}')->group(function () {
+        Route::get('/availability', [PlaceAvailabilityController::class, 'edit'])->name('places.availability.edit');
+        Route::post('/availability', [PlaceAvailabilityController::class, 'update'])->name('places.availability.update');
+        Route::post('/unavailability', [PlaceAvailabilityController::class, 'storeException'])->name('places.unavailability.store');
+        Route::delete('/unavailability/{unavailability}', [PlaceAvailabilityController::class, 'destroyException'])->name('places.unavailability.destroy');
+    });
+
+    // --- Gestion des Réservations ---
+    Route::prefix('/reservations')->name('reservations.')->group(function () {
+        Route::get('/', [ReservationController::class, 'index'])->name('index');
+        Route::get('/create', [ReservationController::class, 'create'])->name('create');
+        Route::post('/', [ReservationController::class, 'store'])->name('store');
+        Route::get('/{reservation}', [ReservationController::class, 'show'])->name('show');
+        Route::post('/{reservation}/payer', [ReservationController::class, 'payer'])->name('payer');
+        Route::post('/{reservation}/valider', [ReservationController::class, 'valider'])->name('valider');
+        Route::post('/{reservation}/refuser', [ReservationController::class, 'refuser'])->name('refuser');
+        Route::delete('/{reservation}', [ReservationController::class, 'destroy'])->name('destroy');
+        // Feedback après réservation terminée
+        Route::get('/{reservation}/feedback', [FeedbackController::class, 'create'])->name('feedback.create');
+        Route::post('/{reservation}/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
+    });
+
+    // --- Gestion des Sites ---
+    Route::get('/sites', [SiteController::class, 'index'])->name('sites.index');
+    Route::get('/sites/create', [SiteController::class, 'create'])->name('sites.create');
+    Route::post('/sites', [SiteController::class, 'store'])->name('sites.store');
+
+    // --- Profil Utilisateur ---
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
+});

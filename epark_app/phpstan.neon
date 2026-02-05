@@ -1,0 +1,17 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - app
+    scanFiles:
+        - vendor/autoload.php
+    ignoreErrors:
+        - message: '/.*return type with generic class.*does not specify its types.*/'
+          paths:
+              - app
+        - message: '/Parameter #1 .*view expects view-string/'
+          paths:
+              - app/Http/Controllers/PlaceController.php
+    reportUnmatchedIgnoredErrors: false

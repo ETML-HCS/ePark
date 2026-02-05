@@ -20,7 +20,7 @@
                     <tr>
                         <td>{{ $site->nom }}</td>
                         <td>{{ $site->adresse }}</td>
-                        <td>{{ $site->proprietaire->name ?? 'N/A' }}</td>
+                        <td>{{ optional($site->user)->name ?? 'N/A' }}</td>
                     </tr>
                 @endforeach
             </tbody>

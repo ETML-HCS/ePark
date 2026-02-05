@@ -16,6 +16,22 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- Site favori -->
+        <div class="mt-4">
+            <x-input-label for="favorite_site_id" :value="__('Site favori')" />
+            <select id="favorite_site_id" name="favorite_site_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                <option value="">Sélectionner un site</option>
+                @foreach($sites as $site)
+                    <option value="{{ $site->id }}" {{ old('favorite_site_id') == $site->id ? 'selected' : '' }}>
+                        {{ $site->nom }} — {{ $site->adresse }}
+                    </option>
+                @endforeach
+                <option value="other" {{ old('favorite_site_id') == 'other' ? 'selected' : '' }}>Autre (je créerai mon site)</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">Si tu choisis “Autre”, tu créeras ton site à la première connexion.</p>
+            <x-input-error :messages="$errors->get('favorite_site_id')" class="mt-2" />
+        </div>
+
         <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />

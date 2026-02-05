@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Notification extends Model
 {
@@ -14,13 +15,21 @@ class Notification extends Model
         'read_at',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string,string>
+     */
     protected $casts = [
         'payload' => 'array',
         'sent_at' => 'datetime',
         'read_at' => 'datetime',
     ];
 
-    public function user()
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

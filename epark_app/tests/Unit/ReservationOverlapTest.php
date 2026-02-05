@@ -26,8 +26,9 @@ class ReservationOverlapTest extends TestCase
         ]);
         $this->place = Place::create([
             'site_id' => $this->site->id,
+            'user_id' => $this->user->id,
             'nom' => 'A-1',
-            'disponible' => true,
+            'is_active' => true,
             'caracteristiques' => null,
         ]);
     }
