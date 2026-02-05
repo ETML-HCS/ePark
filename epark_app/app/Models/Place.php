@@ -95,23 +95,15 @@ class Place extends Model
         }
 
         $day = (int) $start->dayOfWeek; // 0 (dim) -> 6 (sam)
-        $availability = $this->availabilities()->where('day_of_week', $day)->get();
+        $blockedSlots = $this->availabilities()->where('day_of_week', $day)->get();
 
-        if ($availability->isNotEmpty()) {
-            $inWindow = false;
-            foreach ($availability as $slot) {
-                $slotStart = Carbon::parse($start->toDateString().' '.$slot->start_time);
-                $slotEnd = Carbon::parse($start->toDateString().' '.$slot->end_time);
-                if ($slotEnd->lessThanOrEqualTo($slotStart)) {
-                    continue;
-                }
-                if ($start->greaterThanOrEqualTo($slotStart) && $end->lessThanOrEqualTo($slotEnd)) {
-                    $inWindow = true;
-                    break;
-                }
+        foreach ($blockedSlots as $slot) {
+            $slotStart = Carbon::parse($start->toDateString().' '.$slot->start_time);
+            $slotEnd = Carbon::parse($start->toDateString().' '.$slot->end_time);
+            if ($slotEnd->lessThanOrEqualTo($slotStart)) {
+                continue;
             }
-
-            if (!$inWindow) {
+            if ($start < $slotEnd && $end > $slotStart) {
                 return false;
             }
         }
@@ -146,13 +138,6 @@ class Place extends Model
             return false;
         }
         if ($this->availability_end_date && $dayEnd->gt($this->availability_end_date->endOfDay())) {
-            return false;
-        }
-
-        $day = (int) $date->dayOfWeek;
-        $hasSlot = $this->availabilities()->where('day_of_week', $day)->exists();
-
-        if (!$hasSlot) {
             return false;
         }
 

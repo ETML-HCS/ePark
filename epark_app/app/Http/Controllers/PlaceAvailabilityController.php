@@ -17,13 +17,13 @@ class PlaceAvailabilityController extends Controller
         $availabilities = $place->availabilities()->orderBy('day_of_week')->get();
         $unavailabilities = $place->unavailabilities()->orderByDesc('date')->get();
         $days = [
-            0 => 'Dimanche',
             1 => 'Lundi',
             2 => 'Mardi',
             3 => 'Mercredi',
             4 => 'Jeudi',
             5 => 'Vendredi',
             6 => 'Samedi',
+            0 => 'Dimanche',
         ];
 
         $availabilityByDay = $availabilities->keyBy('day_of_week');

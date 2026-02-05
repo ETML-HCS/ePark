@@ -52,14 +52,16 @@ class PlaceAvailabilityService
         }
 
         $day = (int) $date->dayOfWeek;
-        $slots = $place->availabilities->where('day_of_week', $day);
+        $blockedSlots = $place->availabilities->where('day_of_week', $day);
 
-        if ($slots->isEmpty()) {
+        $exceptions = $place->unavailabilities->where('date', $date->toDateString());
+        $fullDayBlock = $exceptions->whereNull('start_time')->whereNull('end_time')->isNotEmpty();
+
+        if ($fullDayBlock) {
             return [];
         }
 
-        $exceptions = $place->unavailabilities
-            ->where('date', $date->toDateString())
+        $timeExceptions = $exceptions
             ->whereNotNull('start_time')
             ->whereNotNull('end_time');
 
@@ -69,11 +71,11 @@ class PlaceAvailabilityService
             $start = $date->copy()->setTime($h, 0);
             $end = $start->copy()->addHour();
 
-            if (!$this->isInsideSlot($start, $end, $slots, $date)) {
+            if ($this->isInsideBlockedSlot($start, $end, $blockedSlots, $date)) {
                 continue;
             }
 
-            if ($this->isBlockedByException($start, $end, $exceptions, $date)) {
+            if ($this->isBlockedByException($start, $end, $timeExceptions, $date)) {
                 continue;
             }
 
@@ -86,13 +88,13 @@ class PlaceAvailabilityService
     /**
      * Vérifie si un créneau est dans une plage de disponibilité.
      */
-    private function isInsideSlot(Carbon $start, Carbon $end, Collection $slots, Carbon $date): bool
+    private function isInsideBlockedSlot(Carbon $start, Carbon $end, Collection $slots, Carbon $date): bool
     {
         foreach ($slots as $slot) {
             $slotStart = Carbon::parse($date->toDateString() . ' ' . $slot->start_time);
             $slotEnd = Carbon::parse($date->toDateString() . ' ' . $slot->end_time);
 
-            if ($end->lessThanOrEqualTo($slotEnd) && $start->greaterThanOrEqualTo($slotStart)) {
+            if ($start < $slotEnd && $end > $slotStart) {
                 return true;
             }
         }
@@ -123,9 +125,10 @@ class PlaceAvailabilityService
     public function findFirstHourInSegment(array $hours, string $segment): ?string
     {
         $segmentRanges = [
-            'matin' => [0, 11],
-            'apm' => [11, 18],
-            'soir' => [18, 24],
+            'matin_travail' => [480, 720],
+            'aprem_travail' => [720, 1050],
+            'soir' => [1080, 1440],
+            'nuit' => [0, 450],
         ];
 
         if (!isset($segmentRanges[$segment])) {
@@ -135,8 +138,9 @@ class PlaceAvailabilityService
         [$segStart, $segEnd] = $segmentRanges[$segment];
 
         foreach ($hours as $hour) {
-            $hh = (int) substr($hour, 0, 2);
-            if ($hh >= $segStart && $hh < $segEnd) {
+            [$hh, $mm] = array_map('intval', explode(':', $hour));
+            $minutes = ($hh * 60) + $mm;
+            if ($minutes >= $segStart && ($minutes + 60) <= $segEnd) {
                 return $hour;
             }
         }

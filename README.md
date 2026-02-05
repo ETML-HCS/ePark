@@ -1,10 +1,13 @@
 # ePark
 
+![ePark](epark_app/public/logo/ePark.png)
+
 ![Version](https://img.shields.io/badge/version-v1.0.0-blue?style=for-the-badge&logo=semantic-release&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/TailwindCSS-3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Alpine](https://img.shields.io/badge/Alpine.js-3-8BC0D0?style=for-the-badge&logo=alpine.js&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-passing-2EA043?style=for-the-badge&logo=checkmarx&logoColor=white)
 ![Status](https://img.shields.io/badge/status-stable-2EA043?style=for-the-badge&logo=github&logoColor=white)
 ![License](https://img.shields.io/badge/licence-interne-lightgrey?style=for-the-badge&logo=law&logoColor=white)
 
@@ -70,6 +73,11 @@ Commandes usuelles (exemples) :
 - php artisan migrate --seed
 - npm run dev
 - php artisan serve
+
+## Tests
+
+- php artisan test
+- php vendor/bin/phpunit
 
 ## Structure fonctionnelle
 

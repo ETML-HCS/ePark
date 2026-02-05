@@ -1,59 +1,79 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ePark
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Plateforme de réservation de places de parking entre particuliers et gestionnaires de sites. ePark simplifie la mise à disposition de places, l’onboarding des utilisateurs et le suivi complet des réservations (paiement, confirmation propriétaire, feedback).
 
-## About Laravel
+## Objectifs
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Réduire la friction de réservation et de mise à disposition.
+- Clarifier le statut des réservations à chaque étape.
+- Offrir un parcours utilisateur simple et guidé.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Parcours utilisateur (référence)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. Connexion
+2. Onboarding simplifié : choisir un site existant OU créer un site favori
+3. Réservation : site favori pré‑sélectionné
+4. Confirmation propriétaire avec message optionnel
+5. Feedback après réservation terminée
 
-## Learning Laravel
+## Fonctionnalités clés
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- Onboarding en une page avec choix du site favori
+- Réservation par date et segment (matin/apm/soir)
+- Disponibilités avancées des places + exceptions
+- Validation/refus propriétaire avec message
+- Paiement et statuts associés
+- Feedback à chaud après fin de réservation
+- Tableau de bord et indicateurs principaux
+- Gestion des sites, places et profils
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Statuts de réservation
 
-## Laravel Sponsors
+- En attente
+- Confirmée
+- Annulée
+- Terminée (confirmée + date de fin passée)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Rôles
 
-### Premium Partners
+- Locataire : réserve une place
+- Propriétaire : propose des places et valide/refuse
+- Admin : visibilité globale
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Stack technique
 
-## Contributing
+- Laravel 12
+- Blade + Alpine.js
+- Tailwind CSS
+- MySQL/MariaDB
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Démarrage rapide
 
-## Code of Conduct
+1. Installer les dépendances PHP et Node
+2. Configurer le fichier .env
+3. Générer la clé d’application
+4. Lancer les migrations et les seeds
+5. Démarrer le serveur et le build front
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Commandes usuelles (exemples) :
+- composer install
+- npm install
+- php artisan key:generate
+- php artisan migrate --seed
+- npm run dev
+- php artisan serve
 
-## Security Vulnerabilities
+## Structure fonctionnelle
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- Gestion des places : disponibilités, exceptions, plages horaires
+- Réservations : création, paiement, validation/refus
+- Feedback : note + commentaire après fin
 
-## License
+## Notes
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Le statut “Terminée” est calculé côté vue à partir de la date de fin.
+- Le site favori est utilisé pour pré‑sélectionner la réservation.
+
+## Licence
+
+Usage interne / projet pédagogique.

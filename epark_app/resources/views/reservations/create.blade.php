@@ -43,14 +43,15 @@
                 selectedHour: {{ json_encode(old('start_hour', '')) }},
                 selectedBattement: {{ json_encode(old('battement', '5')) }},
                 showBattement: false,
-                selectedSegment: 'matin',
+                selectedSegment: 'matin_travail',
                 paymentDone: false,
                 places: {{ json_encode($placesData) }},
                 placeHours: {{ json_encode($placeHours) }},
                 segments: {
-                    matin: { label: 'Matin', start: 0, end: 11 },
-                    apm: { label: 'Après-midi', start: 11, end: 18 },
-                    soir: { label: 'Soir', start: 18, end: 24 }
+                    nuit: { label: 'Nuit', startMin: 0, endMin: 450, hours: '00:00-07:30' },
+                    matin_travail: { label: 'Matin travail', startMin: 480, endMin: 720, hours: '08:00-12:00' },
+                    aprem_travail: { label: 'Aprem travail', startMin: 720, endMin: 1050, hours: '12:00-17:30' },
+                    soir: { label: 'Soir', startMin: 1080, endMin: 1440, hours: '18:00-23:59' }
                 },
                 applyDate() {
                     let url = '{{ route('reservations.create') }}' + '?date=' + this.selectedDate;
@@ -72,16 +73,18 @@
                     const seg = this.segments[segmentKey];
                     const hours = this.hoursForPlace(placeId);
                     return hours.some(h => {
-                        const hh = parseInt(h.split(':')[0], 10);
-                        return hh >= seg.start && hh < seg.end;
+                        const [hh, mm] = h.split(':').map(v => parseInt(v, 10));
+                        const minutes = (hh * 60) + (mm || 0);
+                        return minutes >= seg.startMin && (minutes + 60) <= seg.endMin;
                     });
                 },
                 firstHourInSegment(placeId, segmentKey) {
                     const seg = this.segments[segmentKey];
                     const hours = this.hoursForPlace(placeId);
                     return hours.find(h => {
-                        const hh = parseInt(h.split(':')[0], 10);
-                        return hh >= seg.start && hh < seg.end;
+                        const [hh, mm] = h.split(':').map(v => parseInt(v, 10));
+                        const minutes = (hh * 60) + (mm || 0);
+                        return minutes >= seg.startMin && (minutes + 60) <= seg.endMin;
                     }) || '';
                 },
                 selectPlace(placeId) {
@@ -134,21 +137,30 @@
                         <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-100">3</div>
                         <h3 class="font-black text-gray-900 uppercase tracking-tight text-[11px]">Moment</h3>
                     </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button type="button" @click="selectedSegment = 'matin'; syncHourWithSegment()" 
-                            :class="selectedSegment === 'matin' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
-                            class="flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
-                            Matin
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <button type="button" @click="selectedSegment = 'nuit'; syncHourWithSegment()" 
+                            :class="selectedSegment === 'nuit' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
+                            class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
+                            Nuit
+                            <span class="text-[9px] font-semibold normal-case tracking-normal text-gray-400" :class="selectedSegment === 'nuit' ? 'text-indigo-100' : 'text-gray-400'">00:00-07:30</span>
                         </button>
-                        <button type="button" @click="selectedSegment = 'apm'; syncHourWithSegment()" 
-                            :class="selectedSegment === 'apm' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
-                            class="flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
-                            Aprem
+                        <button type="button" @click="selectedSegment = 'matin_travail'; syncHourWithSegment()" 
+                            :class="selectedSegment === 'matin_travail' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
+                            class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
+                            Matin travail
+                            <span class="text-[9px] font-semibold normal-case tracking-normal text-gray-400" :class="selectedSegment === 'matin_travail' ? 'text-indigo-100' : 'text-gray-400'">08:00-12:00</span>
+                        </button>
+                        <button type="button" @click="selectedSegment = 'aprem_travail'; syncHourWithSegment()" 
+                            :class="selectedSegment === 'aprem_travail' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
+                            class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
+                            Aprem travail
+                            <span class="text-[9px] font-semibold normal-case tracking-normal text-gray-400" :class="selectedSegment === 'aprem_travail' ? 'text-indigo-100' : 'text-gray-400'">12:00-17:30</span>
                         </button>
                         <button type="button" @click="selectedSegment = 'soir'; syncHourWithSegment()" 
                             :class="selectedSegment === 'soir' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
-                            class="flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
+                            class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
                             Soir
+                            <span class="text-[9px] font-semibold normal-case tracking-normal text-gray-400" :class="selectedSegment === 'soir' ? 'text-indigo-100' : 'text-gray-400'">18:00-23:59</span>
                         </button>
                     </div>
                 </div>

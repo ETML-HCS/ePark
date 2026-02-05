@@ -72,9 +72,17 @@ class ReservationController extends Controller
         $today = now()->startOfDay();
         $maxDate = now()->addWeeks(3)->endOfDay();
 
-        $selectedDate = $request->has('date')
-            ? Carbon::parse($request->get('date'))->startOfDay()->clamp($today, $maxDate)
-            : $today->copy();
+        if ($request->has('date')) {
+            $selectedDate = Carbon::parse($request->get('date'))->startOfDay();
+            if ($selectedDate->lt($today)) {
+                $selectedDate = $today->copy();
+            }
+            if ($selectedDate->gt($maxDate)) {
+                $selectedDate = $maxDate->copy()->startOfDay();
+            }
+        } else {
+            $selectedDate = $today->copy();
+        }
 
         $result = $this->availabilityService->getAvailablePlacesForDate($selectedDate);
         $places = $result['places'];
@@ -116,7 +124,7 @@ class ReservationController extends Controller
         $validated = $request->validate([
             'place_id' => 'required|exists:places,id',
             'date' => ['required', 'date', 'after_or_equal:' . $minDate->toDateString(), 'before_or_equal:' . $maxDate->toDateString()],
-            'segment' => 'required|in:matin,apm,soir',
+            'segment' => 'required|in:matin_travail,aprem_travail,soir,nuit',
             'start_hour' => ['nullable', 'regex:/^([01]\\d|2[0-3]):00$/'],
             'battement' => 'required|integer|in:5,10,15,20',
         ]);
