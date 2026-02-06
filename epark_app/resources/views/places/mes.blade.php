@@ -77,7 +77,7 @@
             <!-- Liste des places en grille -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($places as $place)
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group overflow-visible">
                         <!-- Header avec icône -->
                         <div class="h-32 bg-gradient-to-br from-indigo-400 via-purple-400 to-indigo-500 relative flex items-center justify-center overflow-hidden">
                             <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0di00aC0ydjRoLTR2Mmg0djRoMnYtNGg0di0yaC00em0wLTMwVjBoLTJ2NGgtNHYyaDR2NGgyVjZoNFY0aC00ek02IDM0di00SDR2NGg2djJINFY0aDJ2NGg0VjZINlY0aDR2Mmg0djJoLTR2Mmg0djJoLTR2Mmg0djJoLTQiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30\"></div>
@@ -114,13 +114,17 @@
                                 </div>
                             </div>
 
+                            <div class="flex items-center gap-3 mb-4 text-xs">
+                                <span class="text-gray-500 font-medium">{{ optional($place->site)->nom ?? 'Site' }}</span>
+                            </div>
+
                             <!-- Prix si disponible -->
                             @if($place->hourly_price_cents)
                                 <div class="mb-4 py-2 px-3 bg-indigo-50 rounded-xl inline-flex items-center gap-2">
                                     <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    <span class="text-sm font-black text-indigo-600">{{ number_format($place->hourly_price_cents / 100, 2) }}€/h</span>
+                                    <span class="text-sm font-black text-indigo-600">{{ format_chf($place->hourly_price_cents / 100) }}/h</span>
                                 </div>
                             @endif
 
@@ -129,11 +133,11 @@
                                 <a href="{{ route('places.availability.edit', $place->id) }}" class="flex-1 text-center py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm hover:shadow-lg hover:shadow-indigo-200">
                                     Disponibilités
                                 </a>
-                                <button class="p-2.5 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all">
+                                <a href="{{ route('places.edit', $place->id) }}" class="p-2.5 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all" aria-label="Modifier">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>

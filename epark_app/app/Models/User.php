@@ -57,14 +57,6 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function notifications(): HasMany
-    {
-        return $this->hasMany(Notification::class);
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);

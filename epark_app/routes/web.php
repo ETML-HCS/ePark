@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\SiteController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +45,8 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
     Route::get('/places', [PlaceController::class, 'mesPlaces'])->name('places.mes');
     Route::get('/places/create', [PlaceController::class, 'create'])->name('places.create');
     Route::post('/places', [PlaceController::class, 'store'])->name('places.store');
+    Route::get('/places/{place}/edit', [PlaceController::class, 'edit'])->name('places.edit');
+    Route::put('/places/{place}', [PlaceController::class, 'update'])->name('places.update');
 
     // Disponibilités des places
     Route::prefix('/places/{place}')->group(function () {
@@ -67,6 +70,13 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
         Route::get('/{reservation}/feedback', [FeedbackController::class, 'create'])->name('feedback.create');
         Route::post('/{reservation}/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
     });
+
+    Route::post('/notifications/mark-all-read', function () {
+        $user = Auth::user();
+        $user?->unreadNotifications->markAsRead();
+
+        return back()->with('success', 'Notifications marquees comme lues.');
+    })->name('notifications.markAllRead');
 
     // --- Gestion des Sites ---
     Route::get('/sites', [SiteController::class, 'index'])->name('sites.index');

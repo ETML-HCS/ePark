@@ -1,10 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-bold text-2xl text-gray-800 leading-tight flex items-center gap-3">
+            <div>
+                <h2 class="font-bold text-2xl text-gray-800 leading-tight flex items-center gap-3">
                 <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Explorer les places
-            </h2>
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">Trouvez une place disponible et reservez en quelques clics.</p>
+            </div>
             <a href="{{ route('reservations.create') }}" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 Recherche avancée
@@ -64,7 +67,7 @@
                             <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0di00aC0ydjRoLTR2Mmg0djRoMnYtNGg0di0yaC00em0wLTMwVjBoLTJ2NGgtNHYyaDR2NGgyVjZoNFY0aC00ek02IDM0di00SDR2NGg2djJINFY0aDJ2NGg0VjZINlY0aDR2Mmg0djJoLTR2Mmg0djJoLTR2Mmg0djJoLTQiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30"></div>
                             <svg class="w-16 h-16 text-white/60 group-hover:scale-125 group-hover:rotate-12 transition-all duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                             <div class="absolute top-3 right-3 py-1.5 px-3 bg-white/95 backdrop-blur rounded-xl text-xs font-black text-indigo-600 shadow-lg">
-                                {{ number_format($place->hourly_price_cents / 100, 2) }}€/h
+                                {{ format_chf($place->hourly_price_cents / 100) }}/h
                             </div>
                             <div class="absolute top-3 left-3 py-1 px-2 bg-green-500 text-white rounded-lg text-[10px] font-bold">
                                 DISPO
@@ -85,12 +88,7 @@
                             
                             <!-- Statistiques mini -->
                             <div class="flex items-center gap-3 mb-4 text-xs">
-                                <div class="flex items-center gap-1 text-yellow-500">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <span class="font-bold">4.8</span>
-                                </div>
-                                <span class="text-gray-300">•</span>
-                                <span class="text-gray-500 font-medium">12 avis</span>
+                                <span class="text-gray-500 font-medium">{{ optional($place->site)->nom ?? 'Site' }}</span>
                             </div>
                             
                             <div class="border-t border-gray-50 pt-4 flex items-center justify-between">

@@ -27,6 +27,11 @@
         
         @include('layouts.navigation')
 
+        {{-- Toast global pour les messages flash --}}
+        @if(session('success'))
+            <x-success-toast :message="session('success')" />
+        @endif
+
         <!-- En-tête de page optionnel (Header) -->
         @isset($header)
             <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">

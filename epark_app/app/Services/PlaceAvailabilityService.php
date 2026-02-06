@@ -15,11 +15,15 @@ class PlaceAvailabilityService
     /**
      * Récupère les places disponibles pour une date donnée avec leurs créneaux.
      *
+     * @param int|null $excludeUserId Exclure les places appartenant a cet utilisateur.
      * @return array{places: Collection<int, Place>, placeHours: array<int, array<int, string>>}
      */
-    public function getAvailablePlacesForDate(Carbon $date): array
+    public function getAvailablePlacesForDate(Carbon $date, ?int $excludeUserId = null): array
     {
         $places = Place::where('is_active', true)
+            ->when($excludeUserId !== null, function ($query) use ($excludeUserId) {
+                $query->where('user_id', '!=', $excludeUserId);
+            })
             ->with(['availabilities', 'unavailabilities', 'site'])
             ->get();
 

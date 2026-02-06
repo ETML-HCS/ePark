@@ -50,6 +50,65 @@
             <!-- Section Droite : Dropdown Profil -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 @auth
+                    @php
+                        $unreadCount = Auth::user()->unreadNotifications()->count();
+                        $notifications = Auth::user()->notifications()->latest()->take(5)->get();
+                    @endphp
+
+                    <x-dropdown align="right" width="72">
+                        <x-slot name="trigger">
+                            <button class="relative inline-flex items-center justify-center h-10 w-10 rounded-lg text-gray-600 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z" />
+                                </svg>
+                                @if($unreadCount > 0)
+                                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                                        {{ $unreadCount }}
+                                    </span>
+                                @endif
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <div class="block px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm font-semibold text-gray-900 dark:text-white">Notifications</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">Dernieres 5</div>
+                                    </div>
+                                    @if($unreadCount > 0)
+                                        <form method="POST" action="{{ route('notifications.markAllRead') }}">
+                                            @csrf
+                                            <button type="submit" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500">Tout marquer lu</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+
+                            @if($notifications->isEmpty())
+                                <div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                    Aucune notification pour le moment.
+                                </div>
+                            @else
+                                @foreach($notifications as $notification)
+                                    @php
+                                        $payload = $notification->data ?? [];
+                                        $isEndReminder = ($payload['type'] ?? null) === 'end_reminder';
+                                        $placeName = $payload['place_name'] ?? '';
+                                        $title = $isEndReminder ? 'Fin dans 15 min' : 'Notification';
+                                        $message = $placeName ? $placeName : 'Reservation en cours';
+                                    @endphp
+
+                                    <a href="{{ url('/reservations/' . ($payload['reservation_id'] ?? '')) }}"
+                                       class="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {{ $notification->read_at ? '' : 'bg-indigo-50/50 dark:bg-indigo-900/20' }}">
+                                        <div class="font-medium text-gray-900 dark:text-white">{{ $title }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ $message }}</div>
+                                    </a>
+                                @endforeach
+                            @endif
+                        </x-slot>
+                    </x-dropdown>
+
                     <x-dropdown align="right" width="56">
                         <x-slot name="trigger">
                             <button class="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2">
@@ -162,7 +221,7 @@
         <!-- Responsive Settings Options -->
         @auth
             <div class="pt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
-                <div class="flex items-center px-4">
+                <div class="flex items-center justify-between px-4">
                     <div class="shrink-0">
                         <div class="h-10 w-10 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold ring-2 ring-white dark:ring-gray-800">
                             {{ substr(Auth::user()->name, 0, 1) }}{{ substr(explode(' ', Auth::user()->name)[1] ?? '', 0, 1) }}
@@ -172,6 +231,19 @@
                         <div class="text-base font-medium text-gray-800 dark:text-white">{{ Auth::user()->name }}</div>
                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ Auth::user()->email }}</div>
                     </div>
+                    @php
+                        $mobileUnreadCount = Auth::user()->unreadNotifications()->count();
+                    @endphp
+                    <a href="{{ route('reservations.index') }}" class="relative inline-flex items-center justify-center h-10 w-10 rounded-lg text-gray-600 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z" />
+                        </svg>
+                        @if($mobileUnreadCount > 0)
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                                {{ $mobileUnreadCount }}
+                            </span>
+                        @endif
+                    </a>
                 </div>
 
                 <div class="mt-3 space-y-1 px-2">

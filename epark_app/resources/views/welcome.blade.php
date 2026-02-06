@@ -113,7 +113,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{{ __('Revenus du mois') }}</p>
-                                <p class="text-3xl font-bold text-gray-900 dark:text-white">450 €</p>
+                                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ format_chf(450) }}</p>
                                 <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center">
                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>

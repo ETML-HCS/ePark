@@ -84,7 +84,7 @@ class ReservationController extends Controller
             $selectedDate = $today->copy();
         }
 
-        $result = $this->availabilityService->getAvailablePlacesForDate($selectedDate);
+        $result = $this->availabilityService->getAvailablePlacesForDate($selectedDate, $user->id);
         $places = $result['places'];
         $placeHours = $result['placeHours'];
 
@@ -93,6 +93,10 @@ class ReservationController extends Controller
         // 🎯 UX Optimisation: Pré-sélectionner le site favori
         $selectedSiteId = $request->get('site_id') ?? $user->favorite_site_id;
         $selectedPlaceId = $request->get('place_id');
+
+        if ($selectedPlaceId && !$places->contains('id', (int) $selectedPlaceId)) {
+            $selectedPlaceId = null;
+        }
 
         // Si un site est pré-sélectionné mais pas de place, sélectionner la première place disponible
         if ($selectedSiteId && !$selectedPlaceId) {
@@ -133,6 +137,12 @@ class ReservationController extends Controller
         $user = $request->user();
         $place = Place::findOrFail((int) $validated['place_id']);
         $selectedDate = Carbon::parse($validated['date'])->startOfDay();
+
+        if ($place->user_id === $user->id) {
+            return back()->withInput()->withErrors([
+                'place_id' => 'Vous ne pouvez pas réserver votre propre place.',
+            ]);
+        }
 
         try {
             $this->reservationService->createReservation(

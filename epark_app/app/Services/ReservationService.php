@@ -167,4 +167,19 @@ class ReservationService
 
         $reservation->user->notify(new PaymentStatusChanged($reservation, 'refunded'));
     }
+
+    /**
+     * Enregistre l'heure de fin reelle et applique la penalite de depassement.
+     */
+    public function registerActualEnd(Reservation $reservation, Carbon $actualEnd): void
+    {
+        $effectiveEnd = $reservation->getEffectiveEndTime();
+        $overstayMinutes = max(0, $effectiveEnd->diffInMinutes($actualEnd, false));
+        $penaltyCents = $reservation->calculateOverstayPenaltyCents($actualEnd);
+
+        $reservation->actual_end_at = $actualEnd;
+        $reservation->overstay_minutes = $overstayMinutes;
+        $reservation->penalty_cents = $penaltyCents;
+        $reservation->save();
+    }
 }

@@ -38,6 +38,7 @@
 
             <div class="space-y-4" x-data="{
                 selectedDate: {{ json_encode($selectedDate) }},
+                todayDate: {{ json_encode($minDate) }},
                 selectedSite: {{ json_encode($selectedSiteId ?? '') }},
                 selectedPlace: {{ json_encode($selectedPlaceId ?? '') }},
                 selectedHour: {{ json_encode(old('start_hour', '')) }},
@@ -53,11 +54,50 @@
                     aprem_travail: { label: 'Aprem travail', startMin: 720, endMin: 1050, hours: '12:00-17:30' },
                     soir: { label: 'Soir', startMin: 1080, endMin: 1440, hours: '18:00-23:59' }
                 },
+                init() {
+                    const list = this.filteredPlaces();
+                    if (!this.selectedPlace && list.length) {
+                        this.selectPlace(list[0].id);
+                        return;
+                    }
+                    if (this.selectedPlace) {
+                        this.selectedHour = this.firstHourInSegment(this.selectedPlace, this.selectedSegment);
+                    }
+                },
                 applyDate() {
                     let url = '{{ route('reservations.create') }}' + '?date=' + this.selectedDate;
                     if (this.selectedSite) url += '&site_id=' + this.selectedSite;
                     if (this.selectedPlace) url += '&place_id=' + this.selectedPlace;
                     window.location = url;
+                },
+                setToday() {
+                    this.selectedDate = this.todayDate;
+                    this.applyDate();
+                },
+                setSite(siteId) {
+                    this.selectedSite = siteId;
+                    const list = this.filteredPlaces();
+                    if (!list.length) {
+                        this.selectedPlace = '';
+                        this.selectedHour = '';
+                        return;
+                    }
+                    this.selectPlace(list[0].id);
+                },
+                setSegment(segmentKey) {
+                    this.selectedSegment = segmentKey;
+                    const list = this.filteredPlaces();
+                    if (!list.length) {
+                        this.selectedPlace = '';
+                        this.selectedHour = '';
+                        return;
+                    }
+                    const hasPlace = this.selectedPlace && list.some(p => String(p.id) === String(this.selectedPlace));
+                    if (!hasPlace) {
+                        this.selectPlace(list[0].id);
+                        return;
+                    }
+                    this.syncHourWithSegment();
                 },
                 filteredPlaces() {
                     let list = this.places;
@@ -100,15 +140,19 @@
                     if (!this.selectedPlace) return [];
                     return this.placeHours[this.selectedPlace] || [];
                 }
-            }">
+            }" x-init="init()">
 
                 <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm relative overflow-hidden group">
                     <div class="flex items-center gap-3 mb-3">
                         <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-100">1</div>
                         <h3 class="font-black text-gray-900 uppercase tracking-tight text-[11px]">Date</h3>
                     </div>
+                    <p class="text-xs text-gray-500 mb-2">Choisissez la date de reservation.</p>
                     <input type="date" x-model="selectedDate" @change="applyDate()" min="{{ $minDate }}" max="{{ $maxDate }}" 
                         class="w-full rounded-xl border-gray-100 bg-gray-50 font-bold text-gray-700 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 p-3 text-sm transition-all outline-none">
+                    <button type="button" @click="setToday()" class="mt-3 w-full rounded-xl border border-gray-200 bg-white py-2 text-[10px] font-black uppercase tracking-wider text-gray-500 hover:bg-gray-50 transition-all">
+                        Aujourd'hui
+                    </button>
                 </div>
 
                 <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
@@ -117,13 +161,13 @@
                         <h3 class="font-black text-gray-900 uppercase tracking-tight text-[11px]">Site</h3>
                     </div>
                     <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide no-scrollbar -mx-1 px-1">
-                        <button type="button" @click="selectedSite = ''" 
+                        <button type="button" @click="setSite('')" 
                             :class="!selectedSite ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'" 
                             class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all">
                             Tous
                         </button>
                         @foreach($sites as $site)
-                            <button type="button" @click="selectedSite = '{{ $site->id }}'" 
+                            <button type="button" @click="setSite('{{ $site->id }}')" 
                                 :class="selectedSite == '{{ $site->id }}' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'" 
                                 class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all">
                                 {{ $site->nom }}
@@ -137,26 +181,27 @@
                         <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-100">3</div>
                         <h3 class="font-black text-gray-900 uppercase tracking-tight text-[11px]">Moment</h3>
                     </div>
+                    <p class="text-xs text-gray-500 mb-2">Selectionnez le moment qui vous arrange.</p>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <button type="button" @click="selectedSegment = 'nuit'; syncHourWithSegment()" 
+                        <button type="button" @click="setSegment('nuit')" 
                             :class="selectedSegment === 'nuit' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
                             class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
                             Nuit
                             <span class="text-[9px] font-semibold normal-case tracking-normal text-gray-400" :class="selectedSegment === 'nuit' ? 'text-indigo-100' : 'text-gray-400'">00:00-07:30</span>
                         </button>
-                        <button type="button" @click="selectedSegment = 'matin_travail'; syncHourWithSegment()" 
+                        <button type="button" @click="setSegment('matin_travail')" 
                             :class="selectedSegment === 'matin_travail' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
                             class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
-                            Matin travail
+                            Matin
                             <span class="text-[9px] font-semibold normal-case tracking-normal text-gray-400" :class="selectedSegment === 'matin_travail' ? 'text-indigo-100' : 'text-gray-400'">08:00-12:00</span>
                         </button>
-                        <button type="button" @click="selectedSegment = 'aprem_travail'; syncHourWithSegment()" 
+                        <button type="button" @click="setSegment('aprem_travail')" 
                             :class="selectedSegment === 'aprem_travail' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
                             class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
-                            Aprem travail
+                            Aprem
                             <span class="text-[9px] font-semibold normal-case tracking-normal text-gray-400" :class="selectedSegment === 'aprem_travail' ? 'text-indigo-100' : 'text-gray-400'">12:00-17:30</span>
                         </button>
-                        <button type="button" @click="selectedSegment = 'soir'; syncHourWithSegment()" 
+                        <button type="button" @click="setSegment('soir')" 
                             :class="selectedSegment === 'soir' ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'" 
                             class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase">
                             Soir
@@ -170,6 +215,7 @@
                         <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-100">4</div>
                         <h3 class="font-black text-gray-900 uppercase tracking-tight text-[11px]">Place</h3>
                     </div>
+                    <p class="text-xs text-gray-500 mb-2">Choisissez une place disponible pour ce moment.</p>
                     <div class="grid grid-cols-2 gap-2">
                         <template x-for="place in filteredPlaces()" :key="place.id">
                             <button type="button" @click="selectPlace(place.id)" 
@@ -188,7 +234,7 @@
                                         </template>
                                     </div>
                                     <div class="flex items-center justify-between mt-1">
-                                        <div class="text-[10px] font-black text-indigo-600" x-text="place.hourly_price + '€/h'"></div>
+                                        <div class="text-[10px] font-black text-indigo-600" x-text="'CHF ' + Number(place.hourly_price).toFixed(2) + '/h'"></div>
                                         <!-- Tag du site à droite -->
                                         <template x-if="!selectedSite">
                                             <span class="px-1.5 py-0.5 bg-indigo-600 text-white text-[7px] font-black rounded uppercase tracking-tighter" x-text="place.site_nom.substring(0, 4)"></span>

@@ -234,7 +234,7 @@
                         <div class="space-y-4">
                             <div class="p-4 bg-gray-50 rounded-xl">
                                 <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Montant total</p>
-                                <p class="text-3xl font-black text-gray-900">{{ number_format(($reservation->amount_cents ?? 0) / 100, 2, ',', ' ') }} €</p>
+                                <p class="text-3xl font-black text-gray-900">{{ format_chf(($reservation->amount_cents ?? 0) / 100) }}</p>
                             </div>
                             
                             <div class="p-4 rounded-xl
@@ -271,6 +271,38 @@
                                 </button>
                             </form>
                         @endif
+                    </div>
+
+                    <!-- Penalty Card -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
+                            <div class="p-2 bg-red-100 rounded-lg">
+                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            Penalites de depassement
+                        </h3>
+
+                        <div class="space-y-3">
+                            <div class="p-4 bg-gray-50 rounded-xl">
+                                <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Regles</p>
+                                <p class="text-sm text-gray-700">+1h: 40 CHF, +3h: 80 CHF, +1 jour: 120 CHF.</p>
+                            </div>
+
+                            @if($reservation->overstay_minutes > 0)
+                                <div class="p-4 rounded-xl bg-red-50 border border-red-200">
+                                    <p class="text-xs font-semibold text-red-600 uppercase mb-1">Depassement constate</p>
+                                    <p class="text-sm font-bold text-red-900">{{ $reservation->overstay_minutes }} min</p>
+                                    <p class="text-sm text-red-800 mt-1">Penalite appliquee: {{ format_chf(($reservation->penalty_cents ?? 0) / 100) }}</p>
+                                </div>
+                            @else
+                                <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                                    <p class="text-xs font-semibold text-emerald-600 uppercase mb-1">Statut</p>
+                                    <p class="text-sm text-emerald-800">Aucun depassement enregistre.</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
 
                     <!-- User Info Card -->

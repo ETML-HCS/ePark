@@ -10,10 +10,10 @@
                 <h2 class="font-black text-2xl text-gray-900 flex items-center gap-3">
                     <div class="p-2 bg-indigo-100 rounded-xl">
                         <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
                     </div>
-                    Ajouter une place
+                    Modifier la place
                 </h2>
             </div>
         </div>
@@ -21,7 +21,6 @@
 
     <div class="py-8 bg-gradient-to-b from-gray-50 to-white min-h-screen">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            
             @if($errors->any())
                 <div class="mb-6 bg-red-50 border-l-4 border-red-500 rounded-xl p-4 shadow-sm">
                     <div class="flex items-start gap-3">
@@ -29,7 +28,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <div class="flex-1">
-                            <h3 class="font-bold text-red-900 mb-2">Erreurs détectées</h3>
+                            <h3 class="font-bold text-red-900 mb-2">Erreurs detectees</h3>
                             <ul class="space-y-1">
                                 @foreach($errors->all() as $error)
                                     <li class="text-sm text-red-700">• {{ $error }}</li>
@@ -41,55 +40,24 @@
             @endif
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                
-                <!-- Form Header -->
                 <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-8 text-white">
                     <div class="flex items-center gap-4">
                         <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-2xl font-black mb-1">Nouvelle place de parking</h3>
-                            <p class="text-indigo-100">Remplissez les informations ci-dessous pour ajouter une nouvelle place</p>
+                            <h3 class="text-2xl font-black mb-1">Mettre a jour la place</h3>
+                            <p class="text-indigo-100">Modifiez le nom, la description et le tarif horaire</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Form Content -->
-                <form method="POST" action="{{ route('places.store') }}" class="p-8 space-y-6">
+                <form method="POST" action="{{ route('places.update', $place->id) }}" class="p-8 space-y-6">
                     @csrf
+                    @method('PUT')
 
-                    <!-- Site Selection -->
-                    <div>
-                        <label for="site_id" class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
-                            Site <span class="text-red-500">*</span>
-                        </label>
-                        <select 
-                            id="site_id" 
-                            name="site_id" 
-                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-gray-900"
-                            required>
-                            <option value="">-- Sélectionner un site --</option>
-                            @foreach($sites as $site)
-                                <option value="{{ $site->id }}" {{ old('site_id', $selectedSiteId ?? '') == $site->id ? 'selected' : '' }}>
-                                    {{ $site->nom }} - {{ $site->adresse }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <p class="mt-2 text-xs text-gray-500 flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Choisissez le site où se trouve cette place
-                        </p>
-                    </div>
-
-                    <!-- Nom Field -->
                     <div>
                         <label for="nom" class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
                             <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,45 +65,29 @@
                             </svg>
                             Nom de la place <span class="text-red-500">*</span>
                         </label>
-                        <input 
-                            type="text" 
-                            id="nom" 
-                            name="nom" 
-                            value="{{ old('nom') }}"
-                            placeholder="Ex: Place A12, Emplacement 5, etc."
+                        <input
+                            type="text"
+                            id="nom"
+                            name="nom"
+                            value="{{ old('nom', $place->nom) }}"
                             class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-gray-900"
                             required>
-                        <p class="mt-2 text-xs text-gray-500 flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Un identifiant unique pour cette place
-                        </p>
                     </div>
 
-                    <!-- Caractéristiques Field -->
                     <div>
                         <label for="caracteristiques" class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
                             <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            Caractéristiques
+                            Description
                         </label>
-                        <textarea 
-                            id="caracteristiques" 
-                            name="caracteristiques" 
+                        <textarea
+                            id="caracteristiques"
+                            name="caracteristiques"
                             rows="4"
-                            placeholder="Décrivez les caractéristiques de cette place (dimensions, accessibilité, équipements...)"
-                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-gray-900 resize-none">{{ old('caracteristiques') }}</textarea>
-                        <p class="mt-2 text-xs text-gray-500 flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Facultatif - informations utiles pour les clients
-                        </p>
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-gray-900 resize-none">{{ old('caracteristiques', $place->caracteristiques) }}</textarea>
                     </div>
 
-                    <!-- Tarif horaire -->
                     <div>
                         <label for="hourly_price" class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
                             <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,44 +97,24 @@
                         </label>
                         <div class="flex items-stretch rounded-xl border border-gray-200 bg-gray-50 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
                             <span class="inline-flex items-center px-4 text-gray-400 font-bold text-sm border-r border-gray-200">CHF</span>
-                            <input 
-                                type="number" 
-                                id="hourly_price" 
-                                name="hourly_price" 
-                                value="{{ old('hourly_price', '2.00') }}"
-                                min="0" 
+                            <input
+                                type="number"
+                                id="hourly_price"
+                                name="hourly_price"
+                                value="{{ old('hourly_price', number_format(($place->hourly_price_cents ?? 0) / 100, 2, '.', '')) }}"
+                                min="0"
                                 step="0.50"
-                                placeholder="2.00"
                                 class="w-full px-4 py-3 bg-transparent focus:ring-0 focus:border-transparent font-medium text-gray-900"
                                 required>
                         </div>
                         <div class="mt-2 flex items-center justify-between text-xs">
-                            <p class="text-gray-500 flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Prix par heure de stationnement
-                            </p>
+                            <p class="text-gray-500">Prix par heure de stationnement</p>
                             <button type="button" onclick="document.getElementById('hourly_price').value='0.00'" class="text-indigo-600 font-semibold hover:text-indigo-500">
                                 Gratuit
                             </button>
                         </div>
                     </div>
 
-                    <!-- Info Box -->
-                    <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-                        <div class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-indigo-900 text-sm mb-1">💡 Conseil</h4>
-                                <p class="text-sm text-indigo-700">Après avoir créé la place, n'oubliez pas de configurer ses disponibilités pour qu'elle apparaisse dans les recherches.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
                     <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
                         <a href="{{ route('places.mes') }}" class="flex-1 text-center py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all">
                             Annuler
@@ -191,7 +123,7 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            Ajouter la place
+                            Enregistrer
                         </button>
                     </div>
                 </form>

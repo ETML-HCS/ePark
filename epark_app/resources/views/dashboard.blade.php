@@ -57,8 +57,7 @@
                             <p class="text-sm font-semibold text-white uppercase tracking-wide mb-2">Mes Places</p>
                             <p class="text-4xl font-black text-white">{{ $nbPlaces ?? 0 }}</p>
                             <p class="text-xs text-white mt-2 flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path></svg>
-                                +2 ce mois
+                                Places de parking actives
                             </p>
                         </div>
                         <div class="p-4 rounded-2xl bg-white/10 backdrop-blur group-hover:rotate-12 transition-transform duration-300">
@@ -90,10 +89,9 @@
                     <div class="flex items-center justify-between relative z-10">
                         <div>
                             <p class="text-sm font-semibold text-white uppercase tracking-wide mb-2">Revenus Mois</p>
-                            <p class="text-4xl font-black text-white">{{ number_format($revenusMois ?? 0, 0, ',', ' ') }}€</p>
+                            <p class="text-4xl font-black text-white">{{ format_chf($revenusMois ?? 0) }}</p>
                             <p class="text-xs text-white mt-2 flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path></svg>
-                                +15% vs mois dernier
+                                Ce mois-ci
                             </p>
                         </div>
                         <div class="p-4 rounded-2xl bg-white/10 backdrop-blur group-hover:rotate-12 transition-transform duration-300">

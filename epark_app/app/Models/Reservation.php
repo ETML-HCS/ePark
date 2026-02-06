@@ -17,8 +17,12 @@ use Illuminate\Support\Carbon;
  * @property string $statut
  * @property Carbon $date_debut
  * @property Carbon $date_fin
+ * @property Carbon|null $actual_end_at
+ * @property Carbon|null $end_reminder_sent_at
  * @property int $battement_minutes
  * @property int $amount_cents
+ * @property int $overstay_minutes
+ * @property int $penalty_cents
  * @property string $payment_status
  * @property bool $paiement_effectue
  * @property Place $place
@@ -38,6 +42,10 @@ class Reservation extends Model
         'payment_status',
         'paiement_effectue',
         'owner_message',
+        'actual_end_at',
+        'overstay_minutes',
+        'penalty_cents',
+        'end_reminder_sent_at',
     ];
 
     protected $casts = [
@@ -46,6 +54,10 @@ class Reservation extends Model
         'battement_minutes' => 'integer',
         'amount_cents' => 'integer',
         'paiement_effectue' => 'boolean',
+        'actual_end_at' => 'datetime',
+        'overstay_minutes' => 'integer',
+        'penalty_cents' => 'integer',
+        'end_reminder_sent_at' => 'datetime',
     ];
 
     // -------------------------------------------------------------------------
@@ -135,6 +147,30 @@ class Reservation extends Model
     public function getEffectiveEndTime(): Carbon
     {
         return $this->date_fin->copy()->addMinutes($this->battement_minutes ?? 0);
+    }
+
+    /**
+     * Calcule la penalite de depassement en centimes.
+     */
+    public function calculateOverstayPenaltyCents(?Carbon $actualEnd = null): int
+    {
+        $effectiveEnd = $this->getEffectiveEndTime();
+        $actual = $actualEnd ?? now();
+        $overstayMinutes = $effectiveEnd->diffInMinutes($actual, false);
+
+        if ($overstayMinutes < 60) {
+            return 0;
+        }
+
+        if ($overstayMinutes >= 24 * 60) {
+            return 12000;
+        }
+
+        if ($overstayMinutes >= 3 * 60) {
+            return 8000;
+        }
+
+        return 4000;
     }
 
     /**

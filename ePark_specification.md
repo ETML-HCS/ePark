@@ -62,6 +62,10 @@ Ajouter index sur `place_id`, `date_debut`, `date_fin` pour requêtes de conflit
 - If propriétaire modifie disponibilité qui impacte réservation confirmée → then bloquer / notifier et proposer remboursement/relocation.
 - If annulation >24h → remboursement partiel/total selon politique.
 - If dépassement horaire non autorisé et suivant réservé → then alerte et pénalités possibles.
+- If dépassement après fin effective (fin + battement) → then appliquer une pénalité par tranche :
+  - >= 1h : 40 CHF (FRS)
+  - >= 3h : 80 CHF (FRS)
+  - >= 1 jour : 120 CHF (FRS)
 
 ## 10. Concurrence
 - Vérification atomique avant validation : transaction DB + récheck de conflits.
@@ -71,6 +75,7 @@ Ajouter index sur `place_id`, `date_debut`, `date_fin` pour requêtes de conflit
 - Types : confirmation, rappel (e.g. 30m avant), alerte dépassement, modification, paiement.
 - Canaux : email, SMS, push (mobile) — preferences utilisateur.
 - Rappels configurables (ex : 30m / 10m avant début).
+- Rappel automatique 15 minutes avant la fin effective pour liberer la place.
 
 ## 12. Paiement & commissions
 - Intégration provider (Stripe). Capturer et autoriser paiement avant confirmation.

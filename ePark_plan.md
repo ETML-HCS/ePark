@@ -31,6 +31,7 @@
 - Ajout de place à un site existant (propriétaire)
 - Création d’un nouveau site (propriétaire)
 - Gestion des réservations, places, sites
+- Pénalités de dépassement (tranches 1h/3h/1 jour)
 
 ---
 

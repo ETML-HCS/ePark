@@ -27,7 +27,7 @@
             </div>
             <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-5">
                 <p class="text-sm text-gray-500">Revenus (payés)</p>
-                <p class="text-2xl font-bold">{{ number_format($stats['revenue'], 2, ',', ' ') }} €</p>
+                <p class="text-2xl font-bold">{{ format_chf($stats['revenue']) }}</p>
             </div>
         </div>
 
@@ -81,7 +81,7 @@
                                 <tr>
                                     <td class="px-4 py-3 text-sm">#{{ $payment->id }}</td>
                                     <td class="px-4 py-3 text-sm">{{ optional(optional($payment->reservation)->user)->name ?? 'N/A' }}</td>
-                                    <td class="px-4 py-3 text-sm">{{ number_format(($payment->amount_cents ?? 0) / 100, 2, ',', ' ') }} €</td>
+                                    <td class="px-4 py-3 text-sm">{{ format_chf(($payment->amount_cents ?? 0) / 100) }}</td>
                                     <td class="px-4 py-3 text-sm">{{ $payment->provider_status }}</td>
                                 </tr>
                             @empty
