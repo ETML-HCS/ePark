@@ -8,7 +8,7 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Site;
 use App\Models\Place;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 
 class ReservationOverlapTest extends TestCase
 {

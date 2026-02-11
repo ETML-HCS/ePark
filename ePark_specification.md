@@ -16,26 +16,28 @@ L'application ePark permet la mise en relation entre particuliers pour la réser
 - Propriétaire : crée site/place, définit disponibilité, valide réservations, reçoit paiements.
 - Hybride : cumule les deux précédents.
 ```markdown
-# Spécification fonctionnelle — ePark (mise à jour 06-02-2026)
+# Spécification fonctionnelle — ePark (mise à jour 11-02-2026)
 
 Cette spécification reprend le contenu fonctionnel principal et intègre les dernières décisions techniques et actions réalisées au dépôt.
 
 ## Rappel des objectifs
 ePark permet la mise en relation entre particuliers pour la réservation de places de parc à l'heure, avec gestion des disponibilités, réservations, paiements, notifications et back-office.
 
-## Mises à jour récentes (06-02-2026)
-- Interface : corrections UX (menu d'édition visible, largeur des dropdowns, toasts globaux, suppression des étoiles factices).
-- Place : ajout d'un mode de saisie `hourly_price_cents` (prix stocké en centimes), bouton `Gratuit` en création/édition.
-- Édition : formulaire d'édition de `Place` ajouté (nom, description, prix horaire, disponibilité).
-- Notifications : migration pour préserver l'ancienne table `notifications` (renommée `app_notifications`) et création de la table Laravel standard `notifications` (migration ajoutée dans le code).
-- Helpers : fonction `format_chf()` consolidée et requise au bootstrap pour éviter les erreurs si l'autoload composer n'est pas rechargé après déploiement.
-- Déploiement : nouveaux scripts `deploy-full.ps1` et `deploy-full.sh` (rsync privilégié, fallback scp), exclusion des fichiers lourds et des dossiers `vendor`/`node_modules` durant le transfert.
-- Versioning : commit et tag `1.0.5` créé et poussé contenant ces changements.
+## Mises à jour récentes (11-02-2026)
+- Interface : harmonisation palette et composants (boutons, navigation), contrastes renforcés et aria sur menus.
+- Logo : composant `application-logo` remplacé par l'image ePark.
+- Place : ajout d'un delai d'annulation configurable (12h ou 24h) par le proprietaire.
+- Place : suppression douce (soft delete) bloquee si reservations actives/a venir.
+- Reservation : modification possible pour le locataire (en attente, non payee) + annulation selon delai.
+- Admin : page stats dediee (`/admin/stats`) avec top places et taux d'occupation.
+- Helpers : `format_chf()` reste obligatoire pour l'affichage des montants.
 
 ## Points techniques importants
 - Stocker les prix en centimes : `hourly_price_cents` (integer) pour éviter problèmes d'arrondi.
 - Notifications : exécution de la migration obligatoire sur l'environnement de production pour aligner le schéma (voir section Migrations & Déploiement).
 - Helpers : s'assurer que `app/Support/helpers.php` est disponible au bootstrap pour éviter `Call to undefined function`.
+- Annulation : delai applique par place (`cancel_deadline_hours`).
+- Soft delete : les places utilisees passent par `deleted_at`.
 
 ## Actions à exécuter après déploiement (checklist)
 - Installer `rsync` sur l'environnement de déploiement (recommandé) ou lancer le script avec `--allow-scp` en fournissant hôte/utilisateur valides.
@@ -50,6 +52,8 @@ ePark permet la mise en relation entre particuliers pour la réservation de plac
 - Entités principales : `users`, `sites`, `places`, `reservations`, `payments`, `notifications` (Laravel), `app_notifications` (legacy preserved).
 - Règle de conflit créneaux : existing.date_debut < new.date_fin AND existing.date_fin > new.date_debut.
 - Battements : stockés dans `reservations.battement_minutes` (0 / 10 / 15 / 20).
+- Annulation : autorisee avant `date_debut - cancel_deadline_hours`.
+- Reservation modifiable si statut en_attente et paiement pending.
 
 ## Déploiement & rollbacks (recommandation)
 - Build des assets localement: `npm ci && npm run build` (Vite).
@@ -69,4 +73,4 @@ ePark permet la mise en relation entre particuliers pour la réservation de plac
 
 ---
 
-_Mis à jour le : 2026-02-06_
+_Mis à jour le : 2026-02-11_

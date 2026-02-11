@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminStatsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\OnboardingController;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 // Routes Publiques
 // ---------------------------------------------------------
 Route::get('/', [PlaceController::class, 'index'])->name('home');
+Route::view('/mentions-legales', 'legal.mentions-legales')->name('legal.mentions');
 
 require __DIR__.'/auth.php';
 
@@ -40,6 +42,7 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
 
     // --- Back-office admin ---
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
+    Route::get('/admin/stats', [AdminStatsController::class, 'index'])->name('admin.stats');
 
     // --- Gestion des Places ---
     Route::get('/places', [PlaceController::class, 'mesPlaces'])->name('places.mes');
@@ -47,6 +50,7 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
     Route::post('/places', [PlaceController::class, 'store'])->name('places.store');
     Route::get('/places/{place}/edit', [PlaceController::class, 'edit'])->name('places.edit');
     Route::put('/places/{place}', [PlaceController::class, 'update'])->name('places.update');
+    Route::delete('/places/{place}', [PlaceController::class, 'destroy'])->name('places.destroy');
 
     // Disponibilités des places
     Route::prefix('/places/{place}')->group(function () {
@@ -62,6 +66,8 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
         Route::get('/create', [ReservationController::class, 'create'])->name('create');
         Route::post('/', [ReservationController::class, 'store'])->name('store');
         Route::get('/{reservation}', [ReservationController::class, 'show'])->name('show');
+        Route::get('/{reservation}/edit', [ReservationController::class, 'edit'])->name('edit');
+        Route::put('/{reservation}', [ReservationController::class, 'update'])->name('update');
         Route::post('/{reservation}/payer', [ReservationController::class, 'payer'])->name('payer');
         Route::post('/{reservation}/valider', [ReservationController::class, 'valider'])->name('valider');
         Route::post('/{reservation}/refuser', [ReservationController::class, 'refuser'])->name('refuser');
@@ -77,6 +83,14 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
 
         return back()->with('success', 'Notifications marquees comme lues.');
     })->name('notifications.markAllRead');
+
+    Route::get('/notifications', function () {
+        $user = Auth::user();
+        $notifications = $user?->notifications()->latest()->get() ?? collect();
+        return view('notifications.index', [
+            'notifications' => $notifications,
+        ]);
+    })->name('notifications.index');
 
     // --- Gestion des Sites ---
     Route::get('/sites', [SiteController::class, 'index'])->name('sites.index');

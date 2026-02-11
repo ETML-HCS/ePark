@@ -34,12 +34,7 @@
         </style>
     </head>
     
-    <!-- 
-        Classes Dark Mode ajoutées :
-        - bg-gray-50 -> dark:bg-gray-900
-        - text-gray-900 -> dark:text-gray-100
-    -->
-    <body class="font-sans text-gray-900 antialiased bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <body class="font-sans text-gray-900 antialiased bg-gray-50 transition-colors duration-300">
         
         <!-- Conteneur principal : Prend toute la hauteur et centre le contenu -->
         <div class="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">

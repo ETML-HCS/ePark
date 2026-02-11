@@ -44,6 +44,8 @@ class ReservationController extends Controller
         }
 
         $period = $request->get('period', 'upcoming');
+        $status = $request->get('status', '');
+        $payment = $request->get('payment', '');
         $today = now()->startOfDay();
 
         if ($period === 'past') {
@@ -52,7 +54,21 @@ class ReservationController extends Controller
             // Pas de filtre
         } else {
             // Par défaut : réservations à venir (y compris aujourd'hui)
-            $query->whereDate('date_fin', '>=', $today);
+            $query->whereDate('date_fin', '>=', $today)
+                ->where('statut', '!=', 'annulée');
+        }
+
+        if (!empty($status)) {
+            if ($status === 'terminee') {
+                $query->where('statut', 'confirmée')
+                    ->whereDate('date_fin', '<', $today);
+            } else {
+                $query->where('statut', $status);
+            }
+        }
+
+        if (!empty($payment)) {
+            $query->where('payment_status', $payment);
         }
 
         $reservations = $query->orderByDesc('created_at')->get();
@@ -129,8 +145,7 @@ class ReservationController extends Controller
             'place_id' => 'required|exists:places,id',
             'date' => ['required', 'date', 'after_or_equal:' . $minDate->toDateString(), 'before_or_equal:' . $maxDate->toDateString()],
             'segment' => 'required|in:matin_travail,aprem_travail,soir,nuit',
-            'start_hour' => ['nullable', 'regex:/^([01]\\d|2[0-3]):00$/'],
-            'battement' => 'required|integer|in:5,10,15,20',
+            'battement' => 'nullable|integer|in:5',
         ]);
 
         /** @var User $user */
@@ -150,8 +165,7 @@ class ReservationController extends Controller
                 place: $place,
                 date: $selectedDate,
                 segment: $validated['segment'],
-                battement: (int) $validated['battement'],
-                startHour: $validated['start_hour'] ?? null,
+                battement: (int) ($validated['battement'] ?? 5),
                 paid: $request->boolean('paiement_effectue')
             );
 
@@ -173,6 +187,75 @@ class ReservationController extends Controller
         $reservation->load(['user', 'place.site']);
 
         return view('reservations.show', compact('reservation'));
+    }
+
+    /**
+     * Formulaire de modification de reservation (locataire).
+     */
+    public function edit(Request $request, Reservation $reservation): View
+    {
+        $this->authorize('update', $reservation);
+
+        $reservation->load('place');
+
+        $today = now()->startOfDay();
+        $maxDate = now()->addWeeks(3)->endOfDay();
+
+        $selectedDate = $reservation->date_debut->copy()->startOfDay();
+        if ($selectedDate->lt($today)) {
+            $selectedDate = $today->copy();
+        }
+        if ($selectedDate->gt($maxDate)) {
+            $selectedDate = $maxDate->copy()->startOfDay();
+        }
+
+        $startMinutes = ((int) $reservation->date_debut->format('H')) * 60 + (int) $reservation->date_debut->format('i');
+        $segment = match (true) {
+            $startMinutes >= 480 && $startMinutes < 720 => 'matin_travail',
+            $startMinutes >= 720 && $startMinutes < 1050 => 'aprem_travail',
+            $startMinutes >= 1080 && $startMinutes < 1440 => 'soir',
+            default => 'nuit',
+        };
+
+        return view('reservations.edit', [
+            'reservation' => $reservation,
+            'place' => $reservation->place,
+            'minDate' => $today->toDateString(),
+            'maxDate' => $maxDate->toDateString(),
+            'selectedDate' => $selectedDate->toDateString(),
+            'selectedSegment' => $segment,
+        ]);
+    }
+
+    /**
+     * Met a jour une reservation en attente.
+     */
+    public function update(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $this->authorize('update', $reservation);
+
+        $minDate = now()->startOfDay();
+        $maxDate = now()->addWeeks(3)->endOfDay();
+
+        $validated = $request->validate([
+            'date' => ['required', 'date', 'after_or_equal:' . $minDate->toDateString(), 'before_or_equal:' . $maxDate->toDateString()],
+            'segment' => 'required|in:matin_travail,aprem_travail,soir,nuit',
+        ]);
+
+        $selectedDate = Carbon::parse($validated['date'])->startOfDay();
+
+        try {
+            $this->reservationService->rescheduleReservation(
+                $reservation,
+                $selectedDate,
+                $validated['segment']
+            );
+
+            return redirect()->route('reservations.show', $reservation)
+                ->with('success', 'Reservation modifiee avec succes.');
+        } catch (\InvalidArgumentException $e) {
+            return back()->withInput()->withErrors(['date' => $e->getMessage()]);
+        }
     }
 
     /**

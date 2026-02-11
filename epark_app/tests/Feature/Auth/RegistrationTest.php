@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Site;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,11 +19,14 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
+        $site = Site::factory()->create();
+
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'favorite_site_id' => $site->id,
         ]);
 
         $this->assertAuthenticated();

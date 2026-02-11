@@ -45,17 +45,18 @@
 - Carte interactive (Leaflet/Google Maps)
 - Notifications (email, in-app)
 
-# Plan du projet Laravel ePark — état et prochaines étapes (06-02-2026)
+# Plan du projet Laravel ePark — état et prochaines étapes (11-02-2026)
 
 Ce plan liste les phases réalisées et les actions prioritaires pour stabiliser la production et automatiser le déploiement.
 
 ## Phase actuelle — stabilisation & release
-- Changements réalisés : UI fixes, edition `Place`, helpers bootstrap, migration notifications, scripts de déploiement, tag `1.0.5`.
+- Changements réalisés : UI harmonisee (palette/composants), logo ePark, accessibilite de base (aria/contrastes), stats admin, annulation/modification reservation, soft delete places.
 
 ## Tâches immédiates (priorité haute)
 1. Exécuter les migrations en production
 	- `php artisan migrate --force`
 	- Vérifier que la table `notifications` existe et que les anciennes notifications sont maintenant dans `app_notifications` si présent.
+    - Verifier la colonne `places.cancel_deadline_hours` et `places.deleted_at`.
 2. Nettoyer caches et vues
 	- `php artisan config:clear && php artisan cache:clear && php artisan view:clear`
 3. Vérifier les workers/queues (Supervisor/systemd)
@@ -77,6 +78,7 @@ Ce plan liste les phases réalisées et les actions prioritaires pour stabiliser
 - Unitaires : modèles et règles de conflit (locaux/CI).
 - Intégration : webhook paiement (staging).
 - E2E : parcours réservation complet en staging.
+ - E2E : scenario annulation/reschedule selon delai (12h/24h).
 
 ## Automatisation & CI/CD (proposition)
 - Ajouter une étape `deploy` dans CI qui : build assets, transfert via rsync, exécute migrations et clear caches via SSH.
@@ -90,8 +92,9 @@ Ce plan liste les phases réalisées et les actions prioritaires pour stabiliser
 - Documenter procédures d'installation d'`rsync` sur les environnements.
 - Ajouter post-deploy automatique (optionnel, à condition d'avoir clés et permissions).
 - Valider en staging le script `deploy-full.sh` avec `--allow-scp` si rsync non disponible.
+- Ajouter un audit accessibilite plus complet (modales, contrastes, focus).
 
 
 
-_Mis à jour le : 2026-02-06_
+_Mis à jour le : 2026-02-11_
 

@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -14,6 +16,7 @@ use Illuminate\Support\Carbon;
  */
 class Place extends Model
 {
+    use HasFactory, SoftDeletes;
     protected $fillable = [
         'user_id', // propriétaire
         'site_id',
@@ -23,6 +26,7 @@ class Place extends Model
         'equipments_json',
         'hourly_price_cents',
         'is_active',
+        'cancel_deadline_hours',
         'availability_start_date',
         'availability_end_date',
         'adresse',
@@ -41,6 +45,7 @@ class Place extends Model
         'equipments_json' => 'array',
         'hourly_price_cents' => 'integer',
         'is_active' => 'boolean',
+        'cancel_deadline_hours' => 'integer',
         'availability_start_date' => 'date',
         'availability_end_date' => 'date',
         'disponible' => 'boolean',
@@ -108,7 +113,7 @@ class Place extends Model
             }
         }
 
-        $exceptions = $this->unavailabilities()->where('date', $start->toDateString())->get();
+        $exceptions = $this->unavailabilities()->whereDate('date', $start->toDateString())->get();
         foreach ($exceptions as $exception) {
             if (empty($exception->start_time) && empty($exception->end_time)) {
                 return false;
@@ -142,7 +147,7 @@ class Place extends Model
         }
 
         $fullDayBlock = $this->unavailabilities()
-            ->where('date', $date->toDateString())
+            ->whereDate('date', $date->toDateString())
             ->whereNull('start_time')
             ->whereNull('end_time')
             ->exists();

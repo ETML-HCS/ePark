@@ -21,10 +21,13 @@ Plateforme de réservation de places de parking entre particuliers et gestionnai
 - Onboarding en une page avec choix du site favori
 - Réservation par date et segment (matin/apm/soir)
 - Disponibilités avancées des places + exceptions
+- Delai d'annulation configurable (12h/24h)
 - Validation/refus propriétaire avec message
+- Modification de reservation (locataire, en attente)
 - Paiement et statuts associés
 - Feedback à chaud après fin de réservation
 - Tableau de bord et indicateurs principaux
+- Statistiques admin (top places, occupation)
 - Gestion des sites, places et profils
 
 ## Statuts de réservation
@@ -46,6 +49,7 @@ Plateforme de réservation de places de parking entre particuliers et gestionnai
 - Blade + Alpine.js
 - Tailwind CSS
 - MySQL/MariaDB
+- SQLite (dev)
 
 ## Démarrage rapide
 
