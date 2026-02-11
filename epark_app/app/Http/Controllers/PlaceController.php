@@ -47,9 +47,9 @@ class PlaceController extends Controller
     {
         $validated = $request->validate([
             'create_new_site' => 'nullable|boolean',
-            'site_id' => 'required_without:create_new_site|exists:sites,id',
-            'site_nom' => 'required_if:create_new_site,1|string|max:255',
-            'site_adresse' => 'required_if:create_new_site,1|string|max:255',
+            'site_id' => 'required_without:create_new_site|nullable|exists:sites,id',
+            'site_nom' => 'nullable|required_if:create_new_site,1|string|max:255',
+            'site_adresse' => 'nullable|required_if:create_new_site,1|string|max:255',
             'nom' => 'required|string|max:255',
             'caracteristiques' => 'nullable|string|max:1000',
             'hourly_price' => 'required|numeric|min:0',

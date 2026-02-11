@@ -110,6 +110,9 @@
                 }">
                     @csrf
 
+                    <!-- Hidden field to track new site creation -->
+                    <input type="hidden" name="create_new_site" :value="newSite ? '1' : '0'">
+
                     <!-- Site Selection -->
                     <div class="form-group space-y-4 animate-slide-up delay-200">
                         <div class="flex items-center justify-between gap-4">
@@ -180,7 +183,8 @@
                                     value="{{ old('site_nom') }}"
                                     placeholder="Ex: Parking Centre-Ville"
                                     class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 transition-all font-medium text-base text-gray-900"
-                                    :required="newSite">
+                                    :required="newSite"
+                                    :disabled="!newSite">
                             </div>
                             <div>
                                 <label for="site_adresse" class="text-sm font-bold text-gray-900 mb-2 block">Adresse</label>
@@ -191,7 +195,8 @@
                                     value="{{ old('site_adresse') }}"
                                     placeholder="Ex: Rue du Parking 12, 1000 Lausanne"
                                     class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 transition-all font-medium text-base text-gray-900"
-                                    :required="newSite">
+                                    :required="newSite"
+                                    :disabled="!newSite">
                             </div>
                         </div>
                     </div>
