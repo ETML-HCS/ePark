@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
 class ReservationService
 {
     public function __construct(
-        private PlaceAvailabilityService $availabilityService
+        private PlaceBlockedSlotsService $availabilityService
     ) {}
 
     /**

@@ -19,7 +19,7 @@
         <!-- Site favori -->
         <div class="mt-4">
             <x-input-label for="favorite_site_id" :value="__('Site favori')" />
-            <select id="favorite_site_id" name="favorite_site_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+            <select id="favorite_site_id" name="favorite_site_id" class="block mt-1 w-full border-2 border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-0 rounded-xl text-sm font-medium text-gray-900" required>
                 <option value="">Sélectionner un site</option>
                 @foreach($sites as $site)
                     <option value="{{ $site->id }}" {{ old('favorite_site_id') == $site->id ? 'selected' : '' }}>
@@ -56,7 +56,7 @@
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
+            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
                 {{ __('Already registered?') }}
             </a>
 

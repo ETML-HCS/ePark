@@ -83,9 +83,13 @@
                         <!-- Header avec icône -->
                         <div class="h-32 bg-gradient-to-br from-indigo-400 via-purple-400 to-indigo-500 relative flex items-center justify-center overflow-hidden">
                             <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0di00aC0ydjRoLTR2Mmg0djRoMnYtNGg0di0yaC00em0wLTMwVjBoLTJ2NGgtNHYyaDR2NGgyVjZoNFY0aC00ek02IDM0di00SDR2NGg2djJINFY0aDJ2NGg0VjZINlY0aDR2Mmg0djJoLTR2Mmg0djJoLTR2Mmg0djJoLTQiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30\"></div>
-                            <svg class="w-16 h-16 text-white/60 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
-                            </svg>
+                            @if($place->hasWeeklySchedule())
+                                @include('places.partials.weekly-visual-calendar', ['place' => $place, 'heightClass' => 'h-24'])
+                            @else
+                                <svg class="w-16 h-16 text-white/60 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                            @endif
                             @if($place->is_active)
                                 <div class="absolute top-3 right-3 py-1 px-2 bg-green-500 text-white rounded-lg text-[10px] font-bold shadow-lg">
                                     ACTIVE
@@ -99,7 +103,7 @@
 
                         <!-- Contenu -->
                         <div class="p-5">
-                            <h3 class="text-lg font-black text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">{{ $place->nom }}</h3>
+                            <h3 class="text-lg font-black text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">{{ $place->nom }}</h3>
                             
                             <div class="space-y-2 mb-4">
                                 <div class="flex items-center gap-2 text-sm text-gray-600">
@@ -114,10 +118,21 @@
                                     </svg>
                                     <span>{{ Str::limit(optional($place->site)->adresse ?? 'Adresse N/A', 35) }}</span>
                                 </div>
+                                @php
+                                    $cardDescription = $place->caracteristiques ?: $place->description;
+                                @endphp
+                                @if($cardDescription)
+                                    <p class="text-gray-600 text-xs leading-relaxed min-h-[2.5rem]">{{ Str::limit($cardDescription, 95) }}</p>
+                                @endif
                             </div>
 
-                            <div class="flex items-center gap-3 mb-4 text-xs">
-                                <span class="text-gray-500 font-medium">{{ optional($place->site)->nom ?? 'Site' }}</span>
+                            <div class="flex flex-wrap gap-1.5 mb-3">
+                                @if($place->hasWeeklySchedule())
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 text-[10px] font-bold">{{ $place->weeklyScheduleLabel() }}</span>
+                                @endif
+                                @if($place->is_group_reserved)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 text-[10px] font-bold">Groupe : {{ $place->group_name ?? 'Privé' }}</span>
+                                @endif
                             </div>
 
                             <!-- Prix si disponible -->
@@ -132,7 +147,7 @@
 
                             <!-- Actions -->
                             <div class="flex items-center gap-2 pt-4 border-t border-gray-100">
-                                <a href="{{ route('places.availability.edit', $place->id) }}" class="flex-1 text-center py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm hover:shadow-lg hover:shadow-indigo-200">
+                                <a href="{{ route('places.blocked-slots.edit', $place->id) }}" class="flex-1 text-center py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm hover:shadow-lg hover:shadow-indigo-200">
                                     Disponibilités
                                 </a>
                                 <a href="{{ route('places.edit', $place->id) }}" class="p-2.5 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all" aria-label="Modifier">

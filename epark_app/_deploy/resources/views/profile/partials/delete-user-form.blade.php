@@ -59,7 +59,7 @@
                     name="password"
                     type="password"
                     placeholder="Votre mot de passe"
-                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all font-medium text-gray-900"
+                    class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-red-500 hover:border-gray-300 transition-all font-medium text-gray-900"
                 />
                 @if($errors->userDeletion->get('password'))
                     <p class="mt-2 text-sm text-red-600">{{ $errors->userDeletion->first('password') }}</p>

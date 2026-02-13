@@ -22,7 +22,7 @@
                 required 
                 autofocus 
                 autocomplete="name"
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-gray-900">
+                class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
             @if($errors->get('name'))
                 <p class="mt-2 text-sm text-red-600">{{ $errors->first('name') }}</p>
             @endif
@@ -42,7 +42,7 @@
                 value="{{ old('email', $user->email) }}" 
                 required 
                 autocomplete="username"
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-gray-900">
+                class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
             @if($errors->get('email'))
                 <p class="mt-2 text-sm text-red-600">{{ $errors->first('email') }}</p>
             @endif

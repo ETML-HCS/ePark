@@ -37,9 +37,8 @@
     
     {{-- 
         Fond de page global 
-        Ajout des classes 'dark:bg-gray-900' et 'dark:text-gray-100' pour le support du mode sombre
     --}}
-    <body class="font-sans antialiased text-gray-900 bg-gray-50 dark:bg-gray-900 dark:text-gray-100 flex flex-col min-h-screen transition-colors duration-200">
+    <body class="font-sans antialiased text-gray-900 bg-gray-50 flex flex-col min-h-screen transition-colors duration-200">
         
         @include('layouts.navigation')
 
@@ -50,9 +49,9 @@
 
         <!-- En-tête de page optionnel (Header) -->
         @isset($header)
-            <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
+            <header class="bg-white border-b border-gray-200 shadow-sm transition-colors duration-200">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+                    <h1 class="text-2xl font-bold text-gray-900 leading-tight">
                         {{ $header }}
                     </h1>
                 </div>
@@ -68,12 +67,12 @@
         </main>
 
         <!-- Footer Simple -->
-        <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200">
-            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-500 dark:text-gray-400 gap-4">
+        <footer class="bg-white border-t border-gray-200 mt-auto transition-colors duration-200">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-500 gap-4">
                 <p>&copy; {{ date('Y') }} ePark. Tous droits réservés.</p>
                 <div class="flex space-x-6">
-                    <a href="mailto:info@epark.athys.ch" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Support</a>
-                    <a href="{{ route('legal.mentions') }}" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Mentions Légales</a>
+                    <a href="mailto:info@epark.athys.ch" class="hover:text-indigo-600 transition-colors">Support</a>
+                    <a href="{{ route('legal.mentions') }}" class="hover:text-indigo-600 transition-colors">Mentions Légales</a>
                 </div>
             </div>
         </footer>

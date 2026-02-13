@@ -5,10 +5,10 @@
     $baseClasses = 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg transition-all duration-200 relative';
     
     // Classes pour l'état ACTIF
-    $activeClasses = 'bg-indigo-600 text-white shadow-md dark:shadow-none ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-gray-800';
+    $activeClasses = 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-500 ring-offset-2';
     
     // Classes pour l'état INACTIF
-    $inactiveClasses = 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800';
+    $inactiveClasses = 'text-gray-800 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2';
     
     // Fusion des classes selon l'état
     $computedClasses = $active 

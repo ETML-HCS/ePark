@@ -15,7 +15,7 @@
                 name="current_password" 
                 type="password" 
                 autocomplete="current-password"
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all font-medium text-gray-900">
+                class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
             @if($errors->updatePassword->get('current_password'))
                 <p class="mt-2 text-sm text-red-600">{{ $errors->updatePassword->first('current_password') }}</p>
             @endif
@@ -33,7 +33,7 @@
                 name="password" 
                 type="password" 
                 autocomplete="new-password"
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all font-medium text-gray-900">
+                class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
             @if($errors->updatePassword->get('password'))
                 <p class="mt-2 text-sm text-red-600">{{ $errors->updatePassword->first('password') }}</p>
             @endif
@@ -52,7 +52,7 @@
                 name="password_confirmation" 
                 type="password" 
                 autocomplete="new-password"
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all font-medium text-gray-900">
+                class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
             @if($errors->updatePassword->get('password_confirmation'))
                 <p class="mt-2 text-sm text-red-600">{{ $errors->updatePassword->first('password_confirmation') }}</p>
             @endif

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * App\Models\Place
@@ -29,10 +30,17 @@ class Place extends Model
         'cancel_deadline_hours',
         'availability_start_date',
         'availability_end_date',
+        'visual_day_start_time',
+        'visual_day_end_time',
         'adresse',
         'description',
         'disponible', // temporaire, à remplacer par is_active
         'caracteristiques',
+        'weekly_schedule_type',
+        'is_group_reserved',
+        'group_name',
+        'group_access_code_hash',
+        'group_allowed_email_domains',
     ];
 
     /**
@@ -49,7 +57,90 @@ class Place extends Model
         'availability_start_date' => 'date',
         'availability_end_date' => 'date',
         'disponible' => 'boolean',
+        'is_group_reserved' => 'boolean',
+        'group_allowed_email_domains' => 'array',
     ];
+
+    public function hasWeeklySchedule(): bool
+    {
+        return in_array($this->weekly_schedule_type, ['full_week', 'work_week'], true);
+    }
+
+    /**
+     * @return array<int>
+     */
+    public function weeklyScheduleDayIndexes(): array
+    {
+        return match ($this->weekly_schedule_type) {
+            'full_week' => [1, 2, 3, 4, 5, 6, 0],
+            'work_week' => [1, 2, 3, 4, 5],
+            default => [],
+        };
+    }
+
+    public function weeklyScheduleLabel(): ?string
+    {
+        return match ($this->weekly_schedule_type) {
+            'full_week' => 'Semaine complète',
+            'work_week' => 'Semaine de travail',
+            default => null,
+        };
+    }
+
+    public function isVisibleWithGroupCode(?string $groupCode): bool
+    {
+        return $this->isVisibleWithAnyGroupCodes(
+            empty($groupCode) ? [] : [$groupCode],
+            null
+        );
+    }
+
+    /**
+     * @param array<int, string> $groupCodes
+     */
+    public function isVisibleWithAnyGroupCodes(array $groupCodes, ?string $userEmail = null): bool
+    {
+        if (!$this->is_group_reserved) {
+            return true;
+        }
+
+        if ($this->isVisibleForAllowedEmailDomain($userEmail)) {
+            return true;
+        }
+
+        if (empty($this->group_access_code_hash)) {
+            return false;
+        }
+
+        foreach ($groupCodes as $groupCode) {
+            if (!empty($groupCode) && Hash::check((string) $groupCode, $this->group_access_code_hash)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function isVisibleForAllowedEmailDomain(?string $userEmail): bool
+    {
+        if (!$this->is_group_reserved || empty($userEmail)) {
+            return false;
+        }
+
+        $domains = collect($this->group_allowed_email_domains ?? [])
+            ->map(fn ($domain) => ltrim(mb_strtolower(trim((string) $domain)), '@'))
+            ->filter(fn ($domain) => $domain !== '')
+            ->values();
+
+        if ($domains->isEmpty()) {
+            return false;
+        }
+
+        $emailDomain = mb_strtolower((string) strstr($userEmail, '@'));
+        $emailDomain = ltrim($emailDomain, '@');
+
+        return $emailDomain !== '' && $domains->contains($emailDomain);
+    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -72,6 +163,11 @@ class Place extends Model
      */
     public function availabilities(): HasMany
     {
+        return $this->blockedSlots();
+    }
+
+    public function blockedSlots(): HasMany
+    {
         return $this->hasMany(PlaceAvailability::class);
     }
 
@@ -88,6 +184,11 @@ class Place extends Model
      */
     public function isAvailableFor(Carbon $start, Carbon $end): bool
     {
+        return $this->isReservableFor($start, $end);
+    }
+
+    public function isReservableFor(Carbon $start, Carbon $end): bool
+    {
         if ($this->availability_start_date && $start->lt($this->availability_start_date->startOfDay())) {
             return false;
         }
@@ -100,9 +201,9 @@ class Place extends Model
         }
 
         $day = (int) $start->dayOfWeek; // 0 (dim) -> 6 (sam)
-        $blockedSlots = $this->availabilities()->where('day_of_week', $day)->get();
+        $weeklyBlockedSlots = $this->blockedSlots()->where('day_of_week', $day)->get();
 
-        foreach ($blockedSlots as $slot) {
+        foreach ($weeklyBlockedSlots as $slot) {
             $slotStart = Carbon::parse($start->toDateString().' '.$slot->start_time);
             $slotEnd = Carbon::parse($start->toDateString().' '.$slot->end_time);
             if ($slotEnd->lessThanOrEqualTo($slotStart)) {
@@ -135,6 +236,11 @@ class Place extends Model
      * Indique si la place est ouverte pour une date (au moins un créneau).
      */
     public function hasAvailabilityForDate(Carbon $date): bool
+    {
+        return $this->isReservableForDate($date);
+    }
+
+    public function isReservableForDate(Carbon $date): bool
     {
         $dayStart = $date->copy()->startOfDay();
         $dayEnd = $date->copy()->endOfDay();

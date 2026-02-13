@@ -6,6 +6,7 @@ use App\Models\Place;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class PlaceControllerTest extends TestCase
@@ -41,6 +42,96 @@ class PlaceControllerTest extends TestCase
 
         $response = $this->get('/');
         $response->assertSee('Place Visible');
+    }
+
+    public function test_group_reserved_place_is_hidden_without_code(): void
+    {
+        $owner = $this->onboardedUser('proprietaire');
+        $site = Site::factory()->create(['user_id' => $owner->id]);
+
+        Place::factory()->create([
+            'user_id' => $owner->id,
+            'site_id' => $site->id,
+            'is_active' => true,
+            'nom' => 'Place Groupe Privée',
+            'is_group_reserved' => true,
+            'group_name' => 'Equipe A',
+            'group_access_code_hash' => Hash::make('CODE1234'),
+        ]);
+
+        $response = $this->get('/');
+        $response->assertDontSee('Place Groupe Privée');
+    }
+
+    public function test_group_reserved_place_is_visible_with_valid_code(): void
+    {
+        $owner = $this->onboardedUser('proprietaire');
+        $site = Site::factory()->create(['user_id' => $owner->id]);
+
+        Place::factory()->create([
+            'user_id' => $owner->id,
+            'site_id' => $site->id,
+            'is_active' => true,
+            'nom' => 'Place Groupe Visible',
+            'is_group_reserved' => true,
+            'group_name' => 'Equipe A',
+            'group_access_code_hash' => Hash::make('CODE1234'),
+        ]);
+
+        $response = $this->get('/?group_code=CODE1234');
+        $response->assertSee('Place Groupe Visible');
+    }
+
+    public function test_authenticated_user_sees_group_place_with_saved_secret_code(): void
+    {
+        $owner = $this->onboardedUser('proprietaire');
+        $site = Site::factory()->create(['user_id' => $owner->id]);
+
+        Place::factory()->create([
+            'user_id' => $owner->id,
+            'site_id' => $site->id,
+            'is_active' => true,
+            'nom' => 'Place Groupe Auto',
+            'is_group_reserved' => true,
+            'group_name' => 'Equipe A',
+            'group_access_code_hash' => Hash::make('CODE1234'),
+        ]);
+
+        $viewer = $this->onboardedUser('locataire');
+        $viewer->update([
+            'secret_group_codes' => ['CODE1234'],
+        ]);
+
+        $response = $this->actingAs($viewer)->get('/');
+        $response->assertSee('Place Groupe Auto');
+    }
+
+    public function test_authenticated_user_sees_group_place_with_allowed_email_domain(): void
+    {
+        $owner = $this->onboardedUser('proprietaire');
+        $site = Site::factory()->create(['user_id' => $owner->id]);
+
+        Place::factory()->create([
+            'user_id' => $owner->id,
+            'site_id' => $site->id,
+            'is_active' => true,
+            'nom' => 'Place Domaine EduVaud',
+            'is_group_reserved' => true,
+            'group_name' => 'Groupe EduVaud',
+            'group_access_code_hash' => Hash::make('CODE1234'),
+            'group_allowed_email_domains' => ['eduvaud.ch'],
+        ]);
+
+        $viewer = User::factory()->create([
+            'role' => 'locataire',
+            'onboarded' => true,
+            'email' => 'user@eduvaud.ch',
+        ]);
+        $viewerSite = Site::factory()->create(['user_id' => $viewer->id]);
+        $viewer->update(['favorite_site_id' => $viewerSite->id]);
+
+        $response = $this->actingAs($viewer)->get('/');
+        $response->assertSee('Place Domaine EduVaud');
     }
 
     // ─── Mes Places ──────────────────────────────────────
@@ -83,6 +174,36 @@ class PlaceControllerTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseHas('places', ['nom' => 'Nouvelle Place']);
+    }
+
+    public function test_owner_can_create_group_place_from_saved_group(): void
+    {
+        $owner = $this->onboardedUser('proprietaire');
+        $site = Site::first();
+
+        $owner->update([
+            'secret_group_codes' => [
+                ['name' => 'ETML/CFPV', 'code' => 'etml3865'],
+            ],
+        ]);
+
+        $response = $this->actingAs($owner)->post('/places', [
+            'nom' => 'Place Groupe 1',
+            'site_id' => $site->id,
+            'hourly_price' => 5.00,
+            'caracteristiques' => 'Place de groupe',
+            'cancel_deadline_hours' => 12,
+            'is_group_reserved' => 1,
+            'group_source' => 'existing',
+            'secret_group_index' => 0,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('places', [
+            'nom' => 'Place Groupe 1',
+            'is_group_reserved' => 1,
+            'group_name' => 'ETML/CFPV',
+        ]);
     }
 
     // ─── Edit ────────────────────────────────────────────

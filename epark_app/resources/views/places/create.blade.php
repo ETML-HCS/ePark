@@ -106,12 +106,66 @@
                     price: '{{ old('hourly_price', '2.00') }}',
                     cancelDeadline: '{{ old('cancel_deadline_hours', '12') }}',
                     characteristics: '{{ old('caracteristiques', '') }}',
-                    showPreview: false
+                    showPreview: false,
+                    isGroupReserved: {{ old('is_group_reserved', '0') == '1' ? 'true' : 'false' }},
+                    groupSource: '{{ old('group_source', !empty($savedGroupEntries ?? []) ? 'existing' : 'manual') }}'
                 }">
                     @csrf
 
                     <!-- Hidden field to track new site creation -->
                     <input type="hidden" name="create_new_site" :value="newSite ? '1' : '0'">
+
+                    <!-- Affectation groupe -->
+                    <div class="form-group space-y-4 animate-slide-up delay-200">
+                        <label class="text-base font-bold text-gray-900 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11V7a5 5 0 0110 0v4m-1 8H8a2 2 0 01-2-2v-4a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Groupe secret
+                        </label>
+
+                        <input type="hidden" name="is_group_reserved" value="0">
+                        <label class="inline-flex items-center gap-2">
+                            <input type="checkbox" name="is_group_reserved" value="1" x-model="isGroupReserved" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-sm font-semibold text-gray-800">Cette place appartient à un groupe secret</span>
+                        </label>
+
+                        <div x-show="isGroupReserved" x-transition class="space-y-3 p-4 rounded-xl border-2 border-indigo-100 bg-indigo-50/40">
+                            <div class="flex gap-2">
+                                <button type="button" @click="groupSource='existing'" :class="groupSource==='existing' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 border border-gray-200'" class="px-3 py-2 rounded-lg text-xs font-bold transition-all">Depuis mes groupes</button>
+                                <button type="button" @click="groupSource='manual'" :class="groupSource==='manual' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 border border-gray-200'" class="px-3 py-2 rounded-lg text-xs font-bold transition-all">Nouveau groupe</button>
+                            </div>
+
+                            <input type="hidden" name="group_source" :value="groupSource">
+
+                            <div x-show="groupSource==='existing'" class="space-y-2">
+                                <label for="secret_group_index" class="text-xs font-bold text-gray-600 block">Sélectionner un groupe enregistré</label>
+                                <select id="secret_group_index" name="secret_group_index" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 transition-all font-medium text-gray-900">
+                                    <option value="">-- Choisir --</option>
+                                    @foreach(($savedGroupEntries ?? []) as $idx => $entry)
+                                        <option value="{{ $idx }}" {{ (string) old('secret_group_index', '') === (string) $idx ? 'selected' : '' }}>{{ $entry['name'] !== '' ? $entry['name'] : 'Groupe sans nom' }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div x-show="groupSource==='manual'" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="group_name" class="text-xs font-bold text-gray-600 mb-1 block">Nom du groupe</label>
+                                    <input id="group_name" type="text" name="group_name" value="{{ old('group_name') }}" placeholder="Ex: ETML/CFPV" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 transition-all font-medium text-gray-900">
+                                </div>
+                                <div>
+                                    <label for="group_access_code" class="text-xs font-bold text-gray-600 mb-1 block">Code du groupe</label>
+                                    <input id="group_access_code" type="text" name="group_access_code" value="{{ old('group_access_code') }}" placeholder="Ex: etml3865" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 transition-all font-medium text-gray-900">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="group_allowed_email_domains_raw" class="text-xs font-bold text-gray-600 mb-1 block">Domaines email autorisés (optionnel)</label>
+                                <textarea id="group_allowed_email_domains_raw" name="group_allowed_email_domains_raw" rows="2" placeholder="Ex: eduvaud.ch" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 transition-all font-medium text-gray-900">{{ old('group_allowed_email_domains_raw') }}</textarea>
+                                <p class="mt-1 text-[11px] text-gray-500">Un domaine par ligne. Les utilisateurs connectés avec ces emails auront accès au groupe.</p>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Site Selection -->
                     <div class="form-group space-y-4 animate-slide-up delay-200">

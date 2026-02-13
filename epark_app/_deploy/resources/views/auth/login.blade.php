@@ -18,7 +18,7 @@
                     @csrf
 
                     <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <label for="email" class="block text-sm font-bold text-gray-900 mb-1">Email</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,7 +32,7 @@
                                 autocomplete="email"
                                 required
                                 value="{{ old('email') }}"
-                                class="appearance-none block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
+                                class="appearance-none block w-full pl-10 pr-3 py-2.5 border-2 border-gray-200 bg-gray-50 rounded-xl placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-0 text-sm font-medium text-gray-900 hover:border-gray-300 transition-all"
                                 placeholder="nom@exemple.com"
                             >
                         </div>
@@ -43,9 +43,9 @@
 
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <label for="password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
+                            <label for="password" class="block text-sm font-bold text-gray-900">Mot de passe</label>
                             @if (Route::has('password.request'))
-                                <a href="{{ route('password.request') }}" class="text-xs text-indigo-600 hover:text-indigo-500 font-medium">
+                                <a href="{{ route('password.request') }}" class="text-xs text-indigo-600 hover:text-indigo-500 font-semibold">
                                     Oublié ?
                                 </a>
                             @endif
@@ -62,7 +62,7 @@
                                 type="password"
                                 autocomplete="current-password"
                                 required
-                                class="appearance-none block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
+                                class="appearance-none block w-full pl-10 pr-3 py-2.5 border-2 border-gray-200 bg-gray-50 rounded-xl placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-0 text-sm font-medium text-gray-900 hover:border-gray-300 transition-all"
                             >
                         </div>
                         @error('password')

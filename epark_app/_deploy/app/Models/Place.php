@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -15,7 +16,7 @@ use Illuminate\Support\Carbon;
  */
 class Place extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $fillable = [
         'user_id', // propriétaire
         'site_id',
@@ -25,6 +26,7 @@ class Place extends Model
         'equipments_json',
         'hourly_price_cents',
         'is_active',
+        'cancel_deadline_hours',
         'availability_start_date',
         'availability_end_date',
         'adresse',
@@ -43,6 +45,7 @@ class Place extends Model
         'equipments_json' => 'array',
         'hourly_price_cents' => 'integer',
         'is_active' => 'boolean',
+        'cancel_deadline_hours' => 'integer',
         'availability_start_date' => 'date',
         'availability_end_date' => 'date',
         'disponible' => 'boolean',

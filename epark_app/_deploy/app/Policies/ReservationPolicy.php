@@ -52,8 +52,11 @@ class ReservationPolicy
         if ($user->role === 'admin') {
             return true;
         }
+        if ($user->id !== $reservation->user_id) {
+            return false;
+        }
 
-        return $user->id === $reservation->user_id;
+        return $this->canCancelWithDeadline($reservation);
     }
 
     /**
@@ -65,6 +68,30 @@ class ReservationPolicy
     }
 
     /**
+     * L'utilisateur peut modifier sa reservation si elle est en attente et dans le delai.
+     */
+    public function update(User $user, Reservation $reservation): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if ($user->id !== $reservation->user_id) {
+            return false;
+        }
+
+        if ($reservation->statut !== 'en_attente') {
+            return false;
+        }
+
+        if ($reservation->payment_status !== 'pending') {
+            return false;
+        }
+
+        return $this->canCancelWithDeadline($reservation);
+    }
+
+    /**
      * Vérifie si l'utilisateur est propriétaire de la place.
      */
     private function isPlaceOwner(User $user, Reservation $reservation): bool
@@ -73,5 +100,13 @@ class ReservationPolicy
             ?? $reservation->place->site?->user_id;
 
         return $user->id === $ownerId;
+    }
+
+    private function canCancelWithDeadline(Reservation $reservation): bool
+    {
+        $deadlineHours = (int) ($reservation->place?->cancel_deadline_hours ?? 12);
+        $deadline = $reservation->date_debut->copy()->subHours($deadlineHours);
+
+        return now()->lt($deadline);
     }
 }

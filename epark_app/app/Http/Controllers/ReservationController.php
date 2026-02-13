@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Place;
 use App\Models\Reservation;
 use App\Models\User;
-use App\Services\PlaceAvailabilityService;
+use App\Services\PlaceBlockedSlotsService;
 use App\Services\ReservationService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
 class ReservationController extends Controller
 {
     public function __construct(
-        private PlaceAvailabilityService $availabilityService,
+        private PlaceBlockedSlotsService $availabilityService,
         private ReservationService $reservationService
     ) {}
 
@@ -100,9 +100,23 @@ class ReservationController extends Controller
             $selectedDate = $today->copy();
         }
 
-        $result = $this->availabilityService->getAvailablePlacesForDate($selectedDate, $user->id);
-        $places = $result['places'];
-        $placeHours = $result['placeHours'];
+        $savedGroupEntries = $user->secretGroupEntries();
+        $savedGroupCodes = $user->normalizedSecretGroupCodes();
+
+        $effectiveGroupCodes = collect($savedGroupCodes)
+            ->map(fn ($code) => trim((string) $code))
+            ->filter(fn ($code) => $code !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        $result = $this->availabilityService->getAvailablePlacesForDate($selectedDate, $user->id, $effectiveGroupCodes, $user->email);
+        $places = $result['places']
+            ->where('user_id', '!=', $user->id)
+            ->values();
+        $placeHours = collect($result['placeHours'])
+            ->only($places->pluck('id')->all())
+            ->toArray();
 
         $sites = $places->pluck('site')->filter()->unique('id')->values();
 
@@ -130,6 +144,7 @@ class ReservationController extends Controller
             'selectedPlaceId' => $selectedPlaceId,
             'selectedSiteId' => $selectedSiteId,
             'sites' => $sites,
+            'savedGroupEntries' => $savedGroupEntries,
         ]);
     }
 
@@ -156,6 +171,19 @@ class ReservationController extends Controller
         if ($place->user_id === $user->id) {
             return back()->withInput()->withErrors([
                 'place_id' => 'Vous ne pouvez pas réserver votre propre place.',
+            ]);
+        }
+
+        $effectiveGroupCodes = collect($user->normalizedSecretGroupCodes())
+            ->map(fn ($code) => trim((string) $code))
+            ->filter(fn ($code) => $code !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!$place->isVisibleWithAnyGroupCodes($effectiveGroupCodes, $user->email)) {
+            return back()->withInput()->withErrors([
+                'place_id' => 'Cette place est réservée à un groupe privé. Code groupe invalide.',
             ]);
         }
 

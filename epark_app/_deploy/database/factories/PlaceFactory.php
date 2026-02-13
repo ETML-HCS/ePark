@@ -25,6 +25,7 @@ class PlaceFactory extends Factory
             'equipments_json' => ['borne_electrique' => false],
             'hourly_price_cents' => fake()->randomElement([200, 350, 500, 750, 1000]),
             'is_active' => true,
+            'cancel_deadline_hours' => fake()->randomElement([12, 24]),
             'disponible' => true,
             'availability_start_date' => null,
             'availability_end_date' => null,

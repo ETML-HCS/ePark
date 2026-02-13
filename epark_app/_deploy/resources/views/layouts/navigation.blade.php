@@ -3,7 +3,7 @@
   Assure-toi d'avoir Alpine.js chargé (normalement via Vite dans app.js)
 --}}
 <nav x-data="{ open: false }" 
-     class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-300">
+     class="bg-white border-b border-gray-200 sticky top-0 z-50 transition-colors duration-300">
      
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -11,14 +11,11 @@
             <!-- Section Gauche : Logo -->
             <div class="flex items-center gap-4">
                 <!-- Logo -->
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-2 group focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg">
-                    <div class="bg-indigo-600 text-white p-1.5 rounded-lg group-hover:bg-indigo-700 transition-colors shadow-sm">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M6 3a3 3 0 00-3 3v12a3 3 0 003 3h12a3 3 0 003-3V6a3 3 0 00-3-3H6zm4 5h2.5a2.5 2.5 0 010 5H12v3h-2V8z"/>
-                            <path d="M12 10v3h.5a1.5 1.5 0 000-3H12z"/>
-                        </svg>
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2 group focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg" aria-label="ePark">
+                    <div class="bg-white p-1.5 rounded-lg border border-gray-200 group-hover:border-indigo-300 transition-colors shadow-sm">
+                        <x-application-logo class="h-6 w-6" />
                     </div>
-                    <span class="font-bold text-xl tracking-tight text-gray-900 dark:text-white hidden sm:block group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    <span class="font-bold text-xl tracking-tight text-gray-900 hidden sm:block group-hover:text-indigo-600 transition-colors">
                         ePark
                     </span>
                 </a>
@@ -58,7 +55,7 @@
 
                     <x-dropdown align="right" width="72">
                         <x-slot name="trigger">
-                            <button class="relative inline-flex items-center justify-center h-10 w-10 rounded-lg text-gray-600 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all">
+                            <button class="relative inline-flex items-center justify-center h-10 w-10 rounded-lg text-gray-700 hover:text-indigo-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all" aria-label="Notifications" aria-haspopup="menu">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z" />
                                 </svg>
@@ -71,23 +68,23 @@
                         </x-slot>
 
                         <x-slot name="content">
-                            <div class="block px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                            <div class="block px-4 py-3 border-b border-gray-100">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <div class="text-sm font-semibold text-gray-900 dark:text-white">Notifications</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">Dernieres 5</div>
+                                        <div class="text-sm font-semibold text-gray-900">Notifications</div>
+                                        <div class="text-xs text-gray-600">Dernieres 5</div>
                                     </div>
                                     @if($unreadCount > 0)
                                         <form method="POST" action="{{ route('notifications.markAllRead') }}">
                                             @csrf
-                                            <button type="submit" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500">Tout marquer lu</button>
+                                            <button type="submit" class="text-xs font-semibold text-indigo-700 hover:text-indigo-600">Tout marquer lu</button>
                                         </form>
                                     @endif
                                 </div>
                             </div>
 
                             @if($notifications->isEmpty())
-                                <div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                <div class="px-4 py-3 text-sm text-gray-500">
                                     Aucune notification pour le moment.
                                 </div>
                             @else
@@ -101,9 +98,9 @@
                                     @endphp
 
                                     <a href="{{ url('/reservations/' . ($payload['reservation_id'] ?? '')) }}"
-                                       class="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {{ $notification->read_at ? '' : 'bg-indigo-50/50 dark:bg-indigo-900/20' }}">
-                                        <div class="font-medium text-gray-900 dark:text-white">{{ $title }}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ $message }}</div>
+                                       class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors {{ $notification->read_at ? '' : 'bg-indigo-50/50' }}">
+                                        <div class="font-medium text-gray-900">{{ $title }}</div>
+                                        <div class="text-xs text-gray-600">{{ $message }}</div>
                                     </a>
                                 @endforeach
                             @endif
@@ -112,10 +109,10 @@
 
                     <x-dropdown align="right" width="56">
                         <x-slot name="trigger">
-                            <button class="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2">
+                            <button class="flex items-center gap-3 text-sm font-medium text-gray-800 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 rounded-lg hover:bg-gray-50 px-3 py-2" aria-haspopup="menu">
                                 
                                 <!-- Avatar Initiales -->
-                                <div class="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-sm font-bold ring-2 ring-white dark:ring-gray-800 transition-all">
+                                <div class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold ring-2 ring-white transition-all">
                                     {{ substr(Auth::user()->name, 0, 1) }}{{ substr(explode(' ', Auth::user()->name)[1] ?? '', 0, 1) }}
                                 </div>
                                 
@@ -131,15 +128,15 @@
 
                         <x-slot name="content">
                             <!-- Info User -->
-                            <div class="block px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ Auth::user()->name }}</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{{ Auth::user()->email }}</div>
+                            <div class="block px-4 py-3 border-b border-gray-100">
+                                <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
+                                <div class="text-xs text-gray-500 truncate max-w-[200px]">{{ Auth::user()->email }}</div>
                             </div>
 
                             <!-- Lien Profil -->
                             <x-dropdown-link :href="route('profile.edit')">
                                 <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                                     {{ __('Mon Profil') }}
                                 </div>
                             </x-dropdown-link>
@@ -149,7 +146,7 @@
                                 @csrf
                                 <x-dropdown-link 
                                     as="button" 
-                                    class="w-full text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 focus:text-red-700"
+                                    class="w-full text-left text-red-600 hover:bg-red-50 focus:text-red-700"
                                 >
                                     <div class="flex items-center gap-2">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -161,7 +158,7 @@
                     </x-dropdown>
                 @else
                     <!-- Bouton Login simple si non connecté -->
-                    <a href="{{ route('login') }}" class="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    <a href="{{ route('login') }}" class="text-sm font-medium text-gray-800 hover:text-indigo-600 transition-colors">
                         Connexion
                     </a>
                 @endauth
@@ -169,7 +166,7 @@
 
             <!-- Hamburger Menu (Mobile) -->
             <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 transition duration-150 ease-in-out" aria-expanded="false">
+                <button @click="open = ! open" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-gray-600 hover:text-gray-800 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 transition duration-150 ease-in-out" x-bind:aria-expanded="open" aria-controls="mobile-nav">
                     <span class="sr-only">Ouvrir le menu</span>
                     
                     <!-- Icone Menu Hamburger (visible quand open = false) -->
@@ -187,7 +184,7 @@
     </div>
 
     <!-- Responsive Navigation Menu -->
-        <div x-show="open" 
+        <div id="mobile-nav" x-show="open" 
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 -translate-y-2"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -195,7 +192,7 @@
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 -translate-y-2"
             x-cloak
-            class="sm:hidden border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            class="sm:hidden border-b border-gray-200 bg-white">
          
         <div class="pt-3 pb-3 px-4 flex items-center gap-2 overflow-x-auto">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="inline-flex w-auto border-l-0 px-3 py-2 items-center justify-center">
@@ -236,7 +233,7 @@
                 @php
                     $mobileUnreadCount = Auth::user()->unreadNotifications()->count();
                 @endphp
-                <a href="{{ route('notifications.index') }}" class="relative inline-flex w-auto border-l-0 px-3 py-2 items-center justify-center text-gray-600 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all" aria-label="Notifications">
+                <a href="{{ route('notifications.index') }}" class="relative inline-flex w-auto border-l-0 px-3 py-2 items-center justify-center text-gray-600 hover:text-indigo-600 hover:bg-gray-50 transition-all" aria-label="Notifications">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z" />
                     </svg>
@@ -254,7 +251,7 @@
                 </x-responsive-nav-link>
                 <form method="POST" action="{{ route('logout') }}" class="inline-flex">
                     @csrf
-                    <x-responsive-nav-link as="button" class="inline-flex w-auto border-l-0 px-3 py-2 items-center justify-center text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                    <x-responsive-nav-link as="button" class="inline-flex w-auto border-l-0 px-3 py-2 items-center justify-center text-red-600 hover:bg-red-50">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -263,7 +260,7 @@
                 </form>
             @endauth
             @guest
-                <a href="{{ route('login') }}" class="inline-flex w-auto border-l-0 px-3 py-2 items-center justify-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all" aria-label="Connexion">
+                <a href="{{ route('login') }}" class="inline-flex w-auto border-l-0 px-3 py-2 items-center justify-center text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-all" aria-label="Connexion">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4m-5-4l5-5-5-5m5 5H3" />
                     </svg>

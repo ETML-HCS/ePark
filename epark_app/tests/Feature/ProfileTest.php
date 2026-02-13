@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Place;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -104,5 +106,65 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertNotNull($user->fresh());
+    }
+
+    public function test_user_can_add_valid_secret_group_from_profile(): void
+    {
+        $owner = $this->onboardedUser();
+        $ownerSite = Site::factory()->create(['user_id' => $owner->id]);
+
+        Place::factory()->create([
+            'user_id' => $owner->id,
+            'site_id' => $ownerSite->id,
+            'is_group_reserved' => true,
+            'group_name' => 'ETML/CFPV',
+            'group_access_code_hash' => Hash::make('etml3865'),
+        ]);
+
+        $member = $this->onboardedUser();
+
+        $response = $this->actingAs($member)->post('/profile/secret-groups', [
+            'secret_group_name' => 'ETML/CFPV',
+            'secret_group_code' => 'etml3865',
+        ]);
+
+        $response->assertRedirect('/profile');
+        $response->assertSessionHas('status', 'secret-group-added');
+
+        $member->refresh();
+        $this->assertContains('etml3865', $member->normalizedSecretGroupCodes());
+    }
+
+    public function test_user_cannot_add_invalid_secret_group_pair(): void
+    {
+        $member = $this->onboardedUser();
+
+        $response = $this->actingAs($member)->post('/profile/secret-groups', [
+            'secret_group_name' => 'ETML/CFPV',
+            'secret_group_code' => 'wrong-code',
+        ]);
+
+        $response->assertRedirect('/profile');
+        $response->assertSessionHasErrorsIn('secretGroup', ['secret_group_code']);
+    }
+
+    public function test_user_can_remove_secret_group_from_profile(): void
+    {
+        $member = $this->onboardedUser();
+        $member->update([
+            'secret_group_codes' => [
+                ['name' => 'ETML/CFPV', 'code' => 'etml3865'],
+            ],
+        ]);
+
+        $response = $this->actingAs($member)->delete('/profile/secret-groups', [
+            'secret_group_code_remove' => 'etml3865',
+        ]);
+
+        $response->assertRedirect('/profile');
+        $response->assertSessionHas('status', 'secret-group-removed');
+
+        $member->refresh();
+        $this->assertNotContains('etml3865', $member->normalizedSecretGroupCodes());
     }
 }

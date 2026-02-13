@@ -9,7 +9,6 @@ use App\Models\Site;
 use App\Models\User;
 use App\Notifications\PaymentStatusChanged;
 use App\Notifications\ReservationStatusChanged;
-use App\Services\PlaceAvailabilityService;
 use App\Services\ReservationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;

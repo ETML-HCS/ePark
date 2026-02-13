@@ -66,7 +66,7 @@ class AdminStatsController extends Controller
 
         $placesQuery = Place::query()
             ->where('is_active', true)
-            ->with(['availabilities', 'unavailabilities']);
+            ->with(['blockedSlots', 'unavailabilities']);
         if (!empty($siteId)) {
             $placesQuery->where('site_id', $siteId);
         }
@@ -88,7 +88,7 @@ class AdminStatsController extends Controller
                 continue;
             }
 
-            $availabilitiesByDay = $place->availabilities->groupBy('day_of_week');
+            $blockedSlotsByDay = $place->blockedSlots->groupBy('day_of_week');
             $unavailabilitiesByDate = $place->unavailabilities->groupBy(fn($item) => $item->date->toDateString());
 
             $cursor = $rangeStart->copy()->startOfDay();
@@ -98,7 +98,7 @@ class AdminStatsController extends Controller
                 $intervals = [];
                 $dayOfWeek = $cursor->dayOfWeek;
 
-                foreach ($availabilitiesByDay->get($dayOfWeek, []) as $slot) {
+                foreach ($blockedSlotsByDay->get($dayOfWeek, []) as $slot) {
                     $startMinutes = $this->timeToMinutes($slot->start_time);
                     $endMinutes = $this->timeToMinutes($slot->end_time);
                     if ($startMinutes < $endMinutes) {

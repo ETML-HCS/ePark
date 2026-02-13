@@ -73,6 +73,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'role',
         'favorite_site_id',
         'onboarded',
+        'secret_group_codes',
         'password',
     ];
 
@@ -95,7 +96,63 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'onboarded' => 'boolean',
+        'secret_group_codes' => 'encrypted:array',
     ];
+
+    /**
+     * @return array<int, array{name: string, code: string}>
+     */
+    public function secretGroupEntries(): array
+    {
+        $rawEntries = is_array($this->secret_group_codes) ? $this->secret_group_codes : [];
+
+        $entries = collect($rawEntries)
+            ->map(function ($entry) {
+                if (is_string($entry)) {
+                    $code = trim($entry);
+                    if ($code === '') {
+                        return null;
+                    }
+
+                    return [
+                        'name' => '',
+                        'code' => $code,
+                    ];
+                }
+
+                if (is_array($entry)) {
+                    $code = trim((string) ($entry['code'] ?? ''));
+                    $name = trim((string) ($entry['name'] ?? ''));
+
+                    if ($code === '') {
+                        return null;
+                    }
+
+                    return [
+                        'name' => $name,
+                        'code' => $code,
+                    ];
+                }
+
+                return null;
+            })
+            ->filter()
+            ->unique(fn (array $entry) => mb_strtolower($entry['code']))
+            ->values();
+
+        return $entries->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function normalizedSecretGroupCodes(): array
+    {
+        return collect($this->secretGroupEntries())
+            ->map(fn (array $entry) => $entry['code'])
+            ->values()
+            ->all();
+    }
 
     // -------------------------------------------------------------------------
     // Relations supplémentaires

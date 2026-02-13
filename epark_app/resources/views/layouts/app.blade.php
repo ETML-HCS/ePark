@@ -27,17 +27,13 @@
         <link rel="icon" type="image/png" href="{{ asset('logo/ePark.png') }}" />
 
         <!-- Police Figtree (Moderne & Rond) -->
-        <link rel="preconnect" href="https://fonts.bunny.net ">
-        <link href="https://fonts.bunny.net/css?family=figtree:300 ,400,500,600,700&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=figtree:300,400,500,600,700&display=swap" rel="stylesheet" />
 
         <!-- Scripts & Styles via Vite -->
-        {{-- Note: Assure-toi d'importer ton CSS personnalisé dans resources/css/app.js pour profiter du hot reload --}}
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     
-    {{-- 
-        Fond de page global 
-    --}}
     <body class="font-sans antialiased text-gray-900 bg-gray-50 flex flex-col min-h-screen transition-colors duration-200">
         
         @include('layouts.navigation')
@@ -47,8 +43,7 @@
             <x-success-toast :message="session('success')" />
         @endif
 
-        <!-- En-tête de page optionnel (Header) -->
-        @isset($header)
+        @if(isset($header) && trim((string) $header) !== '')
             <header class="bg-white border-b border-gray-200 shadow-sm transition-colors duration-200">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                     <h1 class="text-2xl font-bold text-gray-900 leading-tight">
@@ -56,17 +51,14 @@
                     </h1>
                 </div>
             </header>
-        @endisset
+        @endif
 
-        <!-- Contenu Principal -->
         <main class="flex-grow w-full">
-            {{-- CORRECTION ICI : Utilise @isset pour éviter l'erreur si $slot n'est pas défini --}}
             @isset($slot)
                 {{ $slot }}
             @endisset
         </main>
 
-        <!-- Footer Simple -->
         <footer class="bg-white border-t border-gray-200 mt-auto transition-colors duration-200">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-500 gap-4">
                 <p>&copy; {{ date('Y') }} ePark. Tous droits réservés.</p>
@@ -77,10 +69,8 @@
             </div>
         </footer>
 
-        <!-- Scripts JS (Flash messages, etc.) -->
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                // Fermeture automatique des alertes (Flash messages)
                 const alerts = document.querySelectorAll('[data-dismiss="alert"]');
                 alerts.forEach(alert => {
                     setTimeout(() => {

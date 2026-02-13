@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
 class ReservationService
 {
     public function __construct(
-        private PlaceAvailabilityService $availabilityService
+        private PlaceBlockedSlotsService $availabilityService
     ) {}
 
     /**
@@ -186,6 +186,47 @@ class ReservationService
         $reservation->actual_end_at = $actualEnd;
         $reservation->overstay_minutes = $overstayMinutes;
         $reservation->penalty_cents = $penaltyCents;
+        $reservation->save();
+    }
+
+    /**
+     * Modifie une reservation en attente (changement date/segment).
+     */
+    public function rescheduleReservation(Reservation $reservation, Carbon $date, string $segment): void
+    {
+        $segmentRanges = [
+            'matin_travail' => [480, 720],
+            'aprem_travail' => [720, 1050],
+            'soir' => [1080, 1440],
+            'nuit' => [0, 450],
+        ];
+
+        if (!isset($segmentRanges[$segment])) {
+            throw new \InvalidArgumentException('Moment de la journée invalide.');
+        }
+
+        [$segStart, $segEnd] = $segmentRanges[$segment];
+        $start = $date->copy()->startOfDay()->addMinutes($segStart);
+        $end = $segEnd >= 1440
+            ? $date->copy()->endOfDay()
+            : $date->copy()->startOfDay()->addMinutes($segEnd);
+
+        if ($end->toDateString() !== $start->toDateString()) {
+            throw new \InvalidArgumentException('La réservation doit rester sur la même journée.');
+        }
+
+        $battement = (int) ($reservation->battement_minutes ?? 0);
+
+        if (!$reservation->place->isAvailableFor($start, $end)) {
+            throw new \InvalidArgumentException('La place n\'est pas disponible sur ce créneau.');
+        }
+
+        if (Reservation::overlaps($reservation->place_id, $start, $end, $battement, $reservation->id)) {
+            throw new \InvalidArgumentException('Le créneau sélectionné chevauche une réservation existante.');
+        }
+
+        $reservation->date_debut = $start;
+        $reservation->date_fin = $end;
         $reservation->save();
     }
 }

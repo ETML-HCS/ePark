@@ -54,11 +54,36 @@
                 </div>
             </div>
 
+            @if(auth()->id() === $reservation->user_id)
+                <div class="mb-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-wrap gap-3 items-center">
+                    @can('update', $reservation)
+                        <a href="{{ route('reservations.edit', $reservation) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Modifier la reservation
+                        </a>
+                    @endcan
+                    @can('cancel', $reservation)
+                        <form method="POST" action="{{ route('reservations.destroy', $reservation) }}" onsubmit="return confirm('Annuler cette reservation ?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Annuler la reservation
+                            </button>
+                        </form>
+                    @endcan
+                </div>
+            @endif
+
             {{-- Message du propriétaire (si présent) --}}
             @if($reservation->owner_message)
             <div class="mb-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h3 class="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
-                    <div class="p-2 bg-purple-100 rounded-lg">
+                    <div class="p-2 bg-purple-100 rounded-xl">
                         <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
                         </svg>
@@ -81,7 +106,7 @@
             @if($isReservationOwner && $isCompleted)
             <div class="mb-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h3 class="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-                    <div class="p-2 bg-yellow-100 rounded-lg">
+                    <div class="p-2 bg-yellow-100 rounded-xl">
                         <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                         </svg>
@@ -124,7 +149,7 @@
                     <!-- Parking Info Card -->
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <h3 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                            <div class="p-2 bg-indigo-100 rounded-lg">
+                            <div class="p-2 bg-indigo-100 rounded-xl">
                                 <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 </svg>
@@ -158,7 +183,7 @@
                     <!-- Timeline Card -->
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <h3 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                            <div class="p-2 bg-purple-100 rounded-lg">
+                            <div class="p-2 bg-purple-100 rounded-xl">
                                 <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
@@ -206,7 +231,7 @@
                     <!-- Payment Card -->
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <h3 class="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-                            <div class="p-2 bg-green-100 rounded-lg">
+                            <div class="p-2 bg-green-100 rounded-xl">
                                 <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
@@ -259,7 +284,7 @@
                     <!-- Penalty Card -->
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <h3 class="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-                            <div class="p-2 bg-red-100 rounded-lg">
+                            <div class="p-2 bg-red-100 rounded-xl">
                                 <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
@@ -291,7 +316,7 @@
                     <!-- User Info Card -->
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <h3 class="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-                            <div class="p-2 bg-blue-100 rounded-lg">
+                            <div class="p-2 bg-blue-100 rounded-xl">
                                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>

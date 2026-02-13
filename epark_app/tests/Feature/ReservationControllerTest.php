@@ -11,6 +11,7 @@ use App\Notifications\ReservationStatusChanged;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class ReservationControllerTest extends TestCase
@@ -60,6 +61,51 @@ class ReservationControllerTest extends TestCase
     {
         $response = $this->actingAs($this->tenant)->get('/reservations/create');
         $response->assertStatus(200);
+    }
+
+    public function test_tenant_can_see_group_place_with_saved_secret_code_in_create_form(): void
+    {
+        $groupPlace = Place::factory()->create([
+            'user_id' => $this->owner->id,
+            'site_id' => $this->place->site_id,
+            'nom' => 'Place Groupe Auto Reservation',
+            'is_group_reserved' => true,
+            'group_name' => 'Equipe A',
+            'group_access_code_hash' => Hash::make('CODE1234'),
+        ]);
+
+        $this->tenant->update([
+            'secret_group_codes' => ['CODE1234'],
+        ]);
+
+        $response = $this->actingAs($this->tenant)->get('/reservations/create');
+        $response->assertStatus(200);
+        $response->assertSee($groupPlace->nom);
+    }
+
+    public function test_tenant_can_see_group_place_with_allowed_email_domain_in_create_form(): void
+    {
+        $tenantWithDomain = User::factory()->create([
+            'role' => 'locataire',
+            'onboarded' => true,
+            'email' => 'membre@eduvaud.ch',
+        ]);
+        $tenantSite = Site::factory()->create(['user_id' => $tenantWithDomain->id]);
+        $tenantWithDomain->update(['favorite_site_id' => $tenantSite->id]);
+
+        $groupPlace = Place::factory()->create([
+            'user_id' => $this->owner->id,
+            'site_id' => $this->place->site_id,
+            'nom' => 'Place Domaine Reservation',
+            'is_group_reserved' => true,
+            'group_name' => 'Groupe EduVaud',
+            'group_access_code_hash' => Hash::make('CODE1234'),
+            'group_allowed_email_domains' => ['eduvaud.ch'],
+        ]);
+
+        $response = $this->actingAs($tenantWithDomain)->get('/reservations/create');
+        $response->assertStatus(200);
+        $response->assertSee($groupPlace->nom);
     }
 
     public function test_tenant_can_create_reservation(): void

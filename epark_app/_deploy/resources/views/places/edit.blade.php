@@ -75,6 +75,24 @@
                     </div>
 
                     <div>
+                        <label for="cancel_deadline_hours" class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Delai d'annulation <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="cancel_deadline_hours"
+                            name="cancel_deadline_hours"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-gray-900"
+                            required>
+                            <option value="12" {{ old('cancel_deadline_hours', (string) ($place->cancel_deadline_hours ?? 12)) === '12' ? 'selected' : '' }}>12 heures avant</option>
+                            <option value="24" {{ old('cancel_deadline_hours', (string) ($place->cancel_deadline_hours ?? 12)) === '24' ? 'selected' : '' }}>24 heures avant</option>
+                        </select>
+                        <p class="mt-2 text-xs text-gray-500">Les locataires pourront annuler jusqu'a ce delai.</p>
+                    </div>
+
+                    <div>
                         <label for="caracteristiques" class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
                             <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
