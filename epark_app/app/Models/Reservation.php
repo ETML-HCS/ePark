@@ -49,6 +49,7 @@ class Reservation extends Model
         'overstay_minutes',
         'penalty_cents',
         'end_reminder_sent_at',
+        'owner_deadline_reminder_sent_at',
     ];
 
     protected $casts = [
@@ -61,6 +62,7 @@ class Reservation extends Model
         'overstay_minutes' => 'integer',
         'penalty_cents' => 'integer',
         'end_reminder_sent_at' => 'datetime',
+        'owner_deadline_reminder_sent_at' => 'datetime',
     ];
 
     // -------------------------------------------------------------------------

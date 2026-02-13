@@ -86,8 +86,8 @@
                             name="cancel_deadline_hours"
                             class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-gray-900"
                             required>
-                            <option value="12" {{ old('cancel_deadline_hours', (string) ($place->cancel_deadline_hours ?? 12)) === '12' ? 'selected' : '' }}>12 heures avant</option>
-                            <option value="24" {{ old('cancel_deadline_hours', (string) ($place->cancel_deadline_hours ?? 12)) === '24' ? 'selected' : '' }}>24 heures avant</option>
+                            <option value="12" {{ old('cancel_deadline_hours', (string) ($place->cancel_deadline_hours ?? 24)) === '12' ? 'selected' : '' }}>12 heures avant</option>
+                            <option value="24" {{ old('cancel_deadline_hours', (string) ($place->cancel_deadline_hours ?? 24)) === '24' ? 'selected' : '' }}>24 heures avant</option>
                         </select>
                         <p class="mt-2 text-xs text-gray-500">Les locataires pourront annuler jusqu'a ce delai.</p>
                     </div>

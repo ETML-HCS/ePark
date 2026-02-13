@@ -146,6 +146,19 @@
                         </div>
                     </div>
 
+                    <div class="mb-6 border border-gray-200 rounded-xl p-3 sm:p-4">
+                        <h4 class="text-sm font-bold text-gray-900 mb-2">Validation propriétaire par défaut</h4>
+                        <p class="text-xs text-gray-500 mb-3">
+                            Si une réservation reste en attente à 24h du début (ou si la date est déjà passée), ePark applique automatiquement cette règle.
+                        </p>
+                        <label for="pending_validation_default" class="text-xs font-bold text-gray-600 mb-1 block">Action automatique en cas d'oubli</label>
+                        <select id="pending_validation_default" name="pending_validation_default" class="w-full md:w-96 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="manual" @selected(old('pending_validation_default', $place->pending_validation_default ?? 'manual') === 'manual')>Aucune (je réponds manuellement)</option>
+                            <option value="confirm" @selected(old('pending_validation_default', $place->pending_validation_default ?? 'manual') === 'confirm')>Accorder automatiquement</option>
+                            <option value="refuse" @selected(old('pending_validation_default', $place->pending_validation_default ?? 'manual') === 'refuse')>Refuser automatiquement</option>
+                        </select>
+                    </div>
+
                     <div class="mb-6 overflow-x-auto pb-1">
                         <div class="flex gap-2 min-w-max">
                         <button type="button" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors" data-clear-slot data-day="all">

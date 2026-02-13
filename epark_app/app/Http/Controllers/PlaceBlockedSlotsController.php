@@ -7,6 +7,7 @@ use App\Models\PlaceUnavailability;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class PlaceBlockedSlotsController extends Controller
@@ -36,12 +37,18 @@ class PlaceBlockedSlotsController extends Controller
     {
         $this->authorizeOwner($place);
 
+        $request->merge([
+            'visual_day_start_time' => $this->normalizeHourMinute($request->input('visual_day_start_time')),
+            'visual_day_end_time' => $this->normalizeHourMinute($request->input('visual_day_end_time')),
+        ]);
+
         $validatedOptions = $request->validate([
             'availability_start_date' => 'nullable|date',
             'availability_end_date' => 'nullable|date|after_or_equal:availability_start_date',
             'weekly_schedule_type' => 'nullable|in:full_week,work_week',
             'visual_day_start_time' => 'nullable|date_format:H:i',
             'visual_day_end_time' => 'nullable|date_format:H:i',
+            'pending_validation_default' => 'nullable|in:manual,confirm,refuse',
             'is_group_reserved' => 'nullable|boolean',
             'group_name' => 'nullable|string|max:120',
             'group_access_code' => 'nullable|string|min:4|max:32',
@@ -113,6 +120,7 @@ class PlaceBlockedSlotsController extends Controller
         $place->weekly_schedule_type = $validatedOptions['weekly_schedule_type'] ?? null;
         $place->visual_day_start_time = $validatedOptions['visual_day_start_time'] ?? null;
         $place->visual_day_end_time = $validatedOptions['visual_day_end_time'] ?? null;
+        $place->pending_validation_default = $validatedOptions['pending_validation_default'] ?? 'manual';
 
         $isGroupReserved = $request->boolean('is_group_reserved');
         $place->is_group_reserved = $isGroupReserved;
@@ -187,7 +195,7 @@ class PlaceBlockedSlotsController extends Controller
 
     private function authorizeOwner(Place $place): void
     {
-        if (auth()->id() !== $place->user_id) {
+        if (Auth::id() !== $place->user_id) {
             abort(403, 'Non autorisé.');
         }
     }
@@ -246,5 +254,20 @@ class PlaceBlockedSlotsController extends Controller
 
         $owner->secret_group_codes = $entries->values()->all();
         $owner->save();
+    }
+
+    private function normalizeHourMinute(mixed $value): ?string
+    {
+        $time = trim((string) $value);
+
+        if ($time === '') {
+            return null;
+        }
+
+        if (preg_match('/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/', $time) !== 1) {
+            return $time;
+        }
+
+        return substr($time, 0, 5);
     }
 }

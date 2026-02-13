@@ -104,7 +104,7 @@
                 <form method="POST" action="{{ route('places.store') }}" class="px-8 py-10 space-y-8" x-data="{ 
                     newSite: {{ $sites->isEmpty() ? 'true' : 'false' }},
                     price: '{{ old('hourly_price', '2.00') }}',
-                    cancelDeadline: '{{ old('cancel_deadline_hours', '12') }}',
+                    cancelDeadline: '{{ old('cancel_deadline_hours', '24') }}',
                     characteristics: '{{ old('caracteristiques', '') }}',
                     showPreview: false,
                     isGroupReserved: {{ old('is_group_reserved', '0') == '1' ? 'true' : 'false' }},

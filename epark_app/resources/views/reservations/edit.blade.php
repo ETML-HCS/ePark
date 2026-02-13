@@ -65,7 +65,7 @@
                             <option value="soir" {{ old('segment', $selectedSegment) === 'soir' ? 'selected' : '' }}>Soir (18:00 - 24:00)</option>
                             <option value="nuit" {{ old('segment', $selectedSegment) === 'nuit' ? 'selected' : '' }}>Nuit (00:00 - 07:30)</option>
                         </select>
-                        <p class="mt-2 text-xs text-gray-500">Le delai d'annulation pour cette place est de {{ (int) ($place->cancel_deadline_hours ?? 12) }}h.</p>
+                        <p class="mt-2 text-xs text-gray-500">Le delai d'annulation pour cette place est de {{ (int) ($place->cancel_deadline_hours ?? 24) }}h.</p>
                     </div>
 
                     <div class="flex items-center gap-3 pt-4 border-t border-gray-100">

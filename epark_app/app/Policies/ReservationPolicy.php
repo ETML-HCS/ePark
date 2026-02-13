@@ -104,7 +104,7 @@ class ReservationPolicy
 
     private function canCancelWithDeadline(Reservation $reservation): bool
     {
-        $deadlineHours = (int) ($reservation->place?->cancel_deadline_hours ?? 12);
+        $deadlineHours = (int) ($reservation->place?->cancel_deadline_hours ?? 24);
         $deadline = $reservation->date_debut->copy()->subHours($deadlineHours);
 
         return now()->lt($deadline);

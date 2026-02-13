@@ -7,8 +7,10 @@ use App\Models\Place;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Notifications\PaymentStatusChanged;
+use App\Notifications\ReservationOwnerActionRequired;
 use App\Notifications\ReservationStatusChanged;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Service pour la gestion des réservations.
@@ -91,6 +93,9 @@ class ReservationService
             $reservation->user->notify(new PaymentStatusChanged($reservation, 'paid'));
         }
 
+        $this->notifyOwnerForPendingValidation($reservation);
+        $this->flushDashboardCacheForReservation($reservation);
+
         return $reservation;
     }
 
@@ -111,6 +116,7 @@ class ReservationService
         $reservation->save();
 
         $reservation->user->notify(new ReservationStatusChanged($reservation, 'confirmée'));
+        $this->flushDashboardCacheForReservation($reservation);
     }
 
     /**
@@ -130,6 +136,7 @@ class ReservationService
 
         $reservation->save();
         $reservation->user->notify(new ReservationStatusChanged($reservation, 'annulée'));
+        $this->flushDashboardCacheForReservation($reservation);
     }
 
     /**
@@ -160,6 +167,7 @@ class ReservationService
         $reservation->save();
 
         $reservation->user->notify(new PaymentStatusChanged($reservation, 'paid'));
+        $this->flushDashboardCacheForReservation($reservation);
     }
 
     /**
@@ -228,5 +236,33 @@ class ReservationService
         $reservation->date_debut = $start;
         $reservation->date_fin = $end;
         $reservation->save();
+
+        $this->flushDashboardCacheForReservation($reservation);
+    }
+
+    private function notifyOwnerForPendingValidation(Reservation $reservation): void
+    {
+        $reservation->loadMissing(['place.user', 'place.site.user', 'user']);
+
+        $owner = $reservation->place?->user ?? $reservation->place?->site?->user;
+        if (!$owner || $owner->id === $reservation->user_id) {
+            return;
+        }
+
+        $owner->notify(new ReservationOwnerActionRequired($reservation));
+    }
+
+    private function flushDashboardCacheForReservation(Reservation $reservation): void
+    {
+        $reservation->loadMissing(['place.user', 'place.site.user']);
+
+        Cache::forget('dashboard_stats_' . $reservation->user_id);
+
+        $ownerId = $reservation->place?->user_id
+            ?? $reservation->place?->site?->user_id;
+
+        if (!empty($ownerId)) {
+            Cache::forget('dashboard_stats_' . $ownerId);
+        }
     }
 }
