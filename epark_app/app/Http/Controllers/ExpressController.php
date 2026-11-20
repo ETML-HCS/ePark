@@ -146,7 +146,7 @@ class ExpressController extends Controller
             ->first();
         $bookingConfig = [
             'date' => $selectedDate->toDateString(),
-            'places' => $this->serializePlaces($places, $result['placeSegments']),
+            'places' => $this->serializePlaces($places, $result['placeSegments'], $selectedDate),
             'sites' => $sites->unique('id')->map(fn ($site) => ['id' => $site->id, 'nom' => $site->nom])->values(),
             'segments' => BookingPeriod::SEGMENTS,
             'selectedSiteId' => (string) $selectedSiteId,
@@ -219,7 +219,7 @@ class ExpressController extends Controller
         return response()->json([
             'success' => true,
             'date' => $date->toDateString(),
-            'places' => $this->serializePlaces($places, $result['placeSegments']),
+            'places' => $this->serializePlaces($places, $result['placeSegments'], $date),
             'placeHours' => $placeHours,
         ]);
     }
@@ -229,9 +229,9 @@ class ExpressController extends Controller
      * @param  array<int, array<int, string>>  $placeSegments
      * @return array<int, array<string, mixed>>
      */
-    private function serializePlaces(Collection $places, array $placeSegments): array
+    private function serializePlaces(Collection $places, array $placeSegments, Carbon $date): array
     {
-        return $places->map(function (Place $place) use ($placeSegments): array {
+        return $places->map(function (Place $place) use ($placeSegments, $date): array {
             $site = $place->site;
 
             return [
@@ -240,11 +240,11 @@ class ExpressController extends Controller
                 'adresse' => $site !== null ? $site->adresse : '',
                 'site_id' => $place->site_id,
                 'site_nom' => $site !== null ? $site->nom : 'Parking',
-                'hourly_price' => ($place->hourly_price_cents ?? 0) / 100,
+                'hourly_price' => $place->minHourlyPriceCents() / 100,
                 'rating_avg' => $place->feedbacks_avg_rating !== null ? round((float) $place->feedbacks_avg_rating, 1) : null,
                 'rating_count' => (int) ($place->feedbacks_count ?? 0),
                 'availableSegments' => $placeSegments[$place->id] ?? [],
-                'quotes' => collect(BookingPeriod::SEGMENTS)->map(fn ($period, $segment) => BookingPeriod::amount($place->hourly_price_cents ?? 0, $segment))->all(),
+                'quotes' => collect(BookingPeriod::SEGMENTS)->map(fn ($period, $segment) => $place->quoteCentsFor($date, $segment))->all(),
             ];
         })->values()->all();
     }
@@ -327,7 +327,7 @@ class ExpressController extends Controller
 
         // No payment provider is configured: never simulate a debit or bypass the owner.
         $useAutoPay = false;
-        $isFree = ($place->hourly_price_cents ?? 0) === 0;
+        $isFree = $place->isFreeFor($selectedDate, $validated['segment']);
         $plate = trim((string) ($validated['vehicle_plate'] ?? ''));
         if ($plate !== '') {
             $normalizedPlate = mb_strtoupper($plate);

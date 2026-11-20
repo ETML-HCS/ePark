@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="booking-page max-w-2xl">
+    <div class="booking-page max-w-3xl">
         <a href="{{ route('places.mes') }}" class="ep-back-link">
             <span aria-hidden="true">←</span> Retour à mes places
         </a>
@@ -63,7 +63,7 @@
                 </div>
 
                 <div>
-                    <label for="hourly_price" class="block text-sm font-semibold mb-1.5">Tarif horaire (CHF) <span class="text-rose-700">*</span></label>
+                    <label for="hourly_price" class="block text-sm font-semibold mb-1.5">Tarif horaire par défaut (CHF) <span class="text-rose-700">*</span></label>
                     <div class="flex items-center gap-3">
                         <div class="relative flex-1">
                             <input
@@ -80,6 +80,8 @@
                         <button type="button" onclick="document.getElementById('hourly_price').value='0.00'" class="booking-secondary">Gratuit</button>
                     </div>
                 </div>
+
+                @include('places.partials.rental-rules-editor', ['place' => $place])
 
                 <div class="flex flex-wrap justify-end gap-3 pt-4 border-t border-[#dce3ed]">
                     <a href="{{ route('places.mes') }}" class="booking-secondary">Annuler</a>

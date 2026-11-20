@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Support\BookingPeriod;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,7 +88,7 @@ class PlaceController extends Controller
                 $first = $sitePlaces->first();
                 /** @var Site $site */
                 $site = $first->site;
-                $minCents = (int) $sitePlaces->min('hourly_price_cents');
+                $minCents = (int) $sitePlaces->min(fn (Place $place) => $place->minHourlyPriceCents());
 
                 return [
                     'id' => $site->id,
@@ -96,7 +97,7 @@ class PlaceController extends Controller
                     'latitude' => $site->latitude,
                     'longitude' => $site->longitude,
                     'places_count' => $sitePlaces->count(),
-                    'min_price_label' => format_chf($minCents / 100).'/h',
+                    'min_price_label' => $minCents === 0 ? 'Gratuit' : format_chf($minCents / 100).'/h',
                     'url' => route('express.index', ['site_id' => $site->id]),
                 ];
             })
@@ -136,14 +137,14 @@ class PlaceController extends Controller
             $siteNomRules[] = Rule::unique('sites', 'nom')->where('user_id', $user->id);
         }
 
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'create_new_site' => 'nullable|boolean',
             'site_id' => 'required_unless:create_new_site,1,true|nullable|exists:sites,id',
             'site_nom' => $siteNomRules,
             'site_adresse' => 'nullable|required_if:create_new_site,1|string|max:255',
             'nom' => 'required|string|max:255',
             'caracteristiques' => 'nullable|string|max:1000',
-            'hourly_price' => 'required|numeric|min:0',
+            'hourly_price' => 'required_without:rental_rules|nullable|numeric|min:0',
             'cancel_deadline_hours' => 'nullable|integer|in:12,24',
             'is_group_reserved' => 'nullable|boolean',
             'group_source' => 'nullable|in:existing,manual',
@@ -151,8 +152,11 @@ class PlaceController extends Controller
             'group_name' => 'nullable|string|max:120',
             'group_access_code' => 'nullable|string|min:4|max:32',
             'group_allowed_email_domains_raw' => 'nullable|string|max:1000',
-        ], [
+        ], $this->rentalRulesValidationRules()), [
             'site_nom.unique' => 'Vous avez déjà un site portant ce nom.',
+            'rental_rules.max' => 'Vous pouvez définir au maximum '.Place::MAX_RENTAL_RULES.' plages de location.',
+            'rental_rules.*.days.required' => 'Chaque plage de location doit contenir au moins un jour.',
+            'rental_rules.*.segments.required' => 'Chaque plage de location doit contenir au moins un créneau.',
         ]);
 
         $siteId = $validated['site_id'] ?? null;
@@ -205,12 +209,18 @@ class PlaceController extends Controller
             }
         }
 
+        $rentalRules = $this->normalizeRentalRulesInput($validated['rental_rules'] ?? null);
+        $baseHourlyPriceCents = $rentalRules !== []
+            ? (int) min(array_column($rentalRules, 'hourly_price_cents'))
+            : (int) round(((float) ($validated['hourly_price'] ?? 0)) * 100);
+
         $place = Place::create([
             'user_id' => $user->id,
             'site_id' => $siteId,
             'nom' => $validated['nom'],
             'caracteristiques' => $validated['caracteristiques'] ?? null,
-            'hourly_price_cents' => (int) round($validated['hourly_price'] * 100),
+            'hourly_price_cents' => $baseHourlyPriceCents,
+            'rental_rules_json' => $rentalRules !== [] ? $rentalRules : null,
             'is_active' => true,
             'cancel_deadline_hours' => (int) ($validated['cancel_deadline_hours'] ?? 24),
             'is_group_reserved' => $isGroupReserved,
@@ -307,20 +317,32 @@ class PlaceController extends Controller
             abort(Response::HTTP_FORBIDDEN);
         }
 
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'nom' => 'required|string|max:255',
             'caracteristiques' => 'nullable|string|max:1000',
-            'hourly_price' => 'required|numeric|min:0',
+            'hourly_price' => 'required_without:rental_rules|nullable|numeric|min:0',
             'cancel_deadline_hours' => 'nullable|integer|in:12,24',
             'is_active' => 'nullable|boolean',
+        ], $this->rentalRulesValidationRules()), [
+            'rental_rules.max' => 'Vous pouvez définir au maximum '.Place::MAX_RENTAL_RULES.' plages de location.',
+            'rental_rules.*.days.required' => 'Chaque plage de location doit contenir au moins un jour.',
+            'rental_rules.*.segments.required' => 'Chaque plage de location doit contenir au moins un créneau.',
         ]);
 
         $updateData = [
             'nom' => $validated['nom'],
             'caracteristiques' => $validated['caracteristiques'] ?? null,
-            'hourly_price_cents' => (int) round($validated['hourly_price'] * 100),
+            'hourly_price_cents' => (int) round(((float) ($validated['hourly_price'] ?? 0)) * 100),
             'cancel_deadline_hours' => (int) ($validated['cancel_deadline_hours'] ?? $place->cancel_deadline_hours ?? 24),
         ];
+
+        if ($request->boolean('rental_rules_present') || $request->has('rental_rules')) {
+            $rentalRules = $this->normalizeRentalRulesInput($validated['rental_rules'] ?? null);
+            $updateData['rental_rules_json'] = $rentalRules !== [] ? $rentalRules : null;
+            if ($rentalRules !== []) {
+                $updateData['hourly_price_cents'] = (int) min(array_column($rentalRules, 'hourly_price_cents'));
+            }
+        }
 
         if ($request->has('is_active')) {
             $updateData['is_active'] = $request->boolean('is_active');
@@ -376,5 +398,71 @@ class PlaceController extends Controller
 
         return redirect()->route('places.mes')
             ->with('success', 'Place supprimee avec succes.');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function rentalRulesValidationRules(): array
+    {
+        $validSegments = implode(',', array_keys(BookingPeriod::SEGMENTS));
+
+        return [
+            'rental_rules_present' => 'nullable|boolean',
+            'rental_rules' => 'nullable|array|max:'.Place::MAX_RENTAL_RULES,
+            'rental_rules.*.label' => 'nullable|string|max:60',
+            'rental_rules.*.days' => 'required|array|min:1',
+            'rental_rules.*.days.*' => 'integer|between:0,6',
+            'rental_rules.*.segments' => 'required|array|min:1',
+            'rental_rules.*.segments.*' => 'string|in:'.$validSegments,
+            'rental_rules.*.hourly_price' => 'required|numeric|min:0|max:500',
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>|null  $rules
+     * @return array<int, array{label: string, days: array<int, int>, segments: array<int, string>, hourly_price_cents: int}>
+     */
+    private function normalizeRentalRulesInput(?array $rules): array
+    {
+        if (! is_array($rules) || $rules === []) {
+            return [];
+        }
+
+        $validSegments = array_keys(BookingPeriod::SEGMENTS);
+        $normalized = [];
+
+        foreach (array_slice(array_values($rules), 0, Place::MAX_RENTAL_RULES) as $rule) {
+            $rawDays = is_array($rule['days'] ?? null) ? $rule['days'] : [];
+            $days = [];
+            foreach ($rawDays as $day) {
+                $dayInt = (int) $day;
+                if ($dayInt >= 0 && $dayInt <= 6 && ! in_array($dayInt, $days, true)) {
+                    $days[] = $dayInt;
+                }
+            }
+
+            $rawSegments = is_array($rule['segments'] ?? null) ? $rule['segments'] : [];
+            $segments = [];
+            foreach ($rawSegments as $segment) {
+                $segStr = (string) $segment;
+                if (in_array($segStr, $validSegments, true) && ! in_array($segStr, $segments, true)) {
+                    $segments[] = $segStr;
+                }
+            }
+
+            if ($days === [] || $segments === []) {
+                continue;
+            }
+
+            $normalized[] = [
+                'label' => trim((string) ($rule['label'] ?? '')),
+                'days' => $days,
+                'segments' => $segments,
+                'hourly_price_cents' => max(0, (int) round(((float) ($rule['hourly_price'] ?? 0)) * 100)),
+            ];
+        }
+
+        return $normalized;
     }
 }

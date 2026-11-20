@@ -64,6 +64,8 @@ class ReservationService
 
             $isConfirmed = $paid && $autoConfirm;
 
+            $amountCents = $place->quoteCentsFor($start, $segment);
+
             // Crée la réservation
             $reservation = Reservation::create([
                 'user_id' => $user->id,
@@ -73,7 +75,7 @@ class ReservationService
                 'statut' => $isConfirmed ? 'confirmée' : 'en_attente',
                 'battement_minutes' => $battement,
                 'vehicle_plate' => $normalizedPlate,
-                'amount_cents' => BookingPeriod::amount($place->hourly_price_cents ?? 0, $segment),
+                'amount_cents' => $amountCents,
                 'payment_status' => $paid ? 'paid' : 'pending',
                 'paiement_effectue' => $paid,
             ]);
@@ -337,9 +339,16 @@ class ReservationService
 
             $lockedReservation->date_debut = $start;
             $lockedReservation->date_fin = $end;
-            $lockedReservation->amount_cents = BookingPeriod::amount($place->hourly_price_cents ?? 0, $segment);
+            $lockedReservation->amount_cents = $place->quoteCentsFor($start, $segment);
+            if ($lockedReservation->amount_cents === 0) {
+                $lockedReservation->payment_status = 'paid';
+                $lockedReservation->paiement_effectue = true;
+            }
             $lockedReservation->save();
-            $lockedReservation->payment?->update(['amount_cents' => $lockedReservation->amount_cents]);
+            $lockedReservation->payment?->update([
+                'amount_cents' => $lockedReservation->amount_cents,
+                'provider_status' => $lockedReservation->amount_cents === 0 ? 'succeeded' : ($lockedReservation->payment->provider_status ?? 'pending'),
+            ]);
         });
 
         $reservation->refresh();

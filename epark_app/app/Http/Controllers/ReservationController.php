@@ -254,7 +254,7 @@ class ReservationController extends Controller
         }
 
         // No payment provider is configured: never allow self-declaring payment on booking creation.
-        $isFree = ($place->hourly_price_cents ?? 0) === 0;
+        $isFree = $place->isFreeFor($selectedDate, $validated['segment']);
         $plate = trim((string) ($validated['vehicle_plate'] ?? ''));
         if ($plate !== '') {
             $normalizedPlate = mb_strtoupper($plate);

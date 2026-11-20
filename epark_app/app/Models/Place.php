@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\BookingPeriod;
 use Database\Factories\PlaceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,11 +19,25 @@ use Illuminate\Support\Facades\Hash;
  * @property string $nom
  * @property float|string|null $feedbacks_avg_rating
  * @property int|null $feedbacks_count
+ * @property array<int, array<string, mixed>>|null $rental_rules_json
  */
 class Place extends Model
 {
     /** @use HasFactory<PlaceFactory> */
     use HasFactory, SoftDeletes;
+
+    public const MAX_RENTAL_RULES = 5;
+
+    /** @var array<int, string> */
+    public const DAY_SHORT_LABELS = [
+        1 => 'Lun',
+        2 => 'Mar',
+        3 => 'Mer',
+        4 => 'Jeu',
+        5 => 'Ven',
+        6 => 'Sam',
+        0 => 'Dim',
+    ];
 
     protected $fillable = [
         'user_id', // propriétaire
@@ -32,6 +47,7 @@ class Place extends Model
         'dimensions_json',
         'equipments_json',
         'hourly_price_cents',
+        'rental_rules_json',
         'is_active',
         'cancel_deadline_hours',
         'pending_validation_default',
@@ -59,6 +75,7 @@ class Place extends Model
         'dimensions_json' => 'array',
         'equipments_json' => 'array',
         'hourly_price_cents' => 'integer',
+        'rental_rules_json' => 'array',
         'is_active' => 'boolean',
         'cancel_deadline_hours' => 'integer',
         'pending_validation_default' => 'string',
@@ -68,6 +85,228 @@ class Place extends Model
         'is_group_reserved' => 'boolean',
         'group_allowed_email_domains' => 'array',
     ];
+
+    /**
+     * Retourne les plages de location personnalisées normalisées (max 5).
+     *
+     * @return array<int, array{label: string, days: array<int, int>, segments: array<int, string>, hourly_price_cents: int}>
+     */
+    public function normalizedRentalRules(): array
+    {
+        $raw = $this->rental_rules_json;
+        if (! is_array($raw) || $raw === []) {
+            return [];
+        }
+
+        $validSegments = array_keys(BookingPeriod::SEGMENTS);
+        $normalized = [];
+
+        foreach (array_slice($raw, 0, self::MAX_RENTAL_RULES) as $rule) {
+            $rawDays = is_array($rule['days'] ?? null) ? $rule['days'] : [];
+            $days = [];
+            foreach ($rawDays as $d) {
+                if (is_numeric($d)) {
+                    $dayInt = (int) $d;
+                    if ($dayInt >= 0 && $dayInt <= 6 && ! in_array($dayInt, $days, true)) {
+                        $days[] = $dayInt;
+                    }
+                }
+            }
+
+            $rawSegments = is_array($rule['segments'] ?? null) ? $rule['segments'] : [];
+            $segments = [];
+            foreach ($rawSegments as $s) {
+                $segStr = (string) $s;
+                if (in_array($segStr, $validSegments, true) && ! in_array($segStr, $segments, true)) {
+                    $segments[] = $segStr;
+                }
+            }
+
+            if ($days === [] || $segments === []) {
+                continue;
+            }
+
+            $cents = max(0, (int) ($rule['hourly_price_cents'] ?? 0));
+            $label = trim((string) ($rule['label'] ?? ''));
+
+            $normalized[] = [
+                'label' => $label,
+                'days' => $days,
+                'segments' => $segments,
+                'hourly_price_cents' => $cents,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    public function hasRentalRules(): bool
+    {
+        return $this->normalizedRentalRules() !== [];
+    }
+
+    /**
+     * Retourne la première plage personnalisée correspondant à la date et au créneau.
+     *
+     * @return array{label: string, days: array<int, int>, segments: array<int, string>, hourly_price_cents: int}|null
+     */
+    public function matchingRentalRule(Carbon $date, string $segment): ?array
+    {
+        $dayOfWeek = (int) $date->dayOfWeek;
+
+        foreach ($this->normalizedRentalRules() as $rule) {
+            if (in_array($dayOfWeek, $rule['days'], true) && in_array($segment, $rule['segments'], true)) {
+                return $rule;
+            }
+        }
+
+        return null;
+    }
+
+    public function isSegmentAllowedByRentalRules(Carbon $date, string $segment): bool
+    {
+        if (! $this->hasRentalRules()) {
+            return true;
+        }
+
+        return $this->matchingRentalRule($date, $segment) !== null;
+    }
+
+    /**
+     * Retourne les créneaux autorisés par les plages personnalisées pour une date donnée.
+     *
+     * @return array<int, string>
+     */
+    public function allowedSegmentsForDate(Carbon $date): array
+    {
+        $rules = $this->normalizedRentalRules();
+        if ($rules === []) {
+            return array_keys(BookingPeriod::SEGMENTS);
+        }
+
+        $dayOfWeek = (int) $date->dayOfWeek;
+        $allowed = [];
+
+        foreach ($rules as $rule) {
+            if (in_array($dayOfWeek, $rule['days'], true)) {
+                foreach ($rule['segments'] as $segment) {
+                    $allowed[$segment] = true;
+                }
+            }
+        }
+
+        return array_keys($allowed);
+    }
+
+    public function hourlyPriceCentsFor(Carbon $date, string $segment): int
+    {
+        $rule = $this->matchingRentalRule($date, $segment);
+        if ($rule !== null) {
+            return $rule['hourly_price_cents'];
+        }
+
+        return (int) ($this->hourly_price_cents ?? 0);
+    }
+
+    public function quoteCentsFor(Carbon $date, string $segment): int
+    {
+        return BookingPeriod::amount($this->hourlyPriceCentsFor($date, $segment), $segment);
+    }
+
+    public function isFreeFor(Carbon $date, string $segment): bool
+    {
+        return $this->quoteCentsFor($date, $segment) === 0;
+    }
+
+    public function minHourlyPriceCents(): int
+    {
+        $rules = $this->normalizedRentalRules();
+        if ($rules === []) {
+            return (int) ($this->hourly_price_cents ?? 0);
+        }
+
+        return (int) min(array_column($rules, 'hourly_price_cents'));
+    }
+
+    public function maxHourlyPriceCents(): int
+    {
+        $rules = $this->normalizedRentalRules();
+        if ($rules === []) {
+            return (int) ($this->hourly_price_cents ?? 0);
+        }
+
+        return (int) max(array_column($rules, 'hourly_price_cents'));
+    }
+
+    public function priceSummaryLabel(): string
+    {
+        $min = $this->minHourlyPriceCents();
+        $max = $this->maxHourlyPriceCents();
+
+        if ($min === $max) {
+            return $min === 0 ? 'Gratuit' : format_chf($min / 100).'/h';
+        }
+
+        $minLabel = $min === 0 ? 'Gratuit' : format_chf($min / 100).'/h';
+        $maxLabel = format_chf($max / 100).'/h';
+
+        return $minLabel.' – '.$maxLabel;
+    }
+
+    /**
+     * Résumé lisible des plages personnalisées pour l'affichage sur les cartes.
+     *
+     * @return array<int, array{label: string, days: string, segments: string, price: string, is_free: bool}>
+     */
+    public function rentalRuleSummaries(): array
+    {
+        return collect($this->normalizedRentalRules())
+            ->map(function (array $rule): array {
+                $daysText = self::formatDaysLabel($rule['days']);
+                $segmentsText = collect($rule['segments'])
+                    ->map(fn (string $seg) => BookingPeriod::SEGMENTS[$seg]['label'] ?? $seg)
+                    ->implode(', ');
+                $isFree = $rule['hourly_price_cents'] === 0;
+
+                return [
+                    'label' => $rule['label'] !== '' ? $rule['label'] : $daysText,
+                    'days' => $daysText,
+                    'segments' => $segmentsText,
+                    'price' => $isFree ? 'Gratuit' : format_chf($rule['hourly_price_cents'] / 100).'/h',
+                    'is_free' => $isFree,
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @param  array<int, int>  $days
+     */
+    public static function formatDaysLabel(array $days): string
+    {
+        $sorted = array_values(array_unique($days));
+        sort($sorted);
+
+        if ($sorted === [0, 1, 2, 3, 4, 5, 6]) {
+            return '7j/7';
+        }
+        if ($sorted === [1, 2, 3, 4, 5]) {
+            return 'Lun–Ven';
+        }
+        if ($sorted === [0, 6]) {
+            return 'Sam–Dim';
+        }
+
+        $orderedKeys = [1, 2, 3, 4, 5, 6, 0];
+        $labels = [];
+        foreach ($orderedKeys as $dayIndex) {
+            if (in_array($dayIndex, $sorted, true)) {
+                $labels[] = self::DAY_SHORT_LABELS[$dayIndex];
+            }
+        }
+
+        return implode(', ', $labels);
+    }
 
     public function hasWeeklySchedule(): bool
     {
@@ -224,6 +463,13 @@ class Place extends Model
             return false;
         }
 
+        if ($this->hasRentalRules()) {
+            $detectedSegment = BookingPeriod::detectSegment($start, $end);
+            if (! $this->isSegmentAllowedByRentalRules($start, $detectedSegment)) {
+                return false;
+            }
+        }
+
         $day = (int) $start->dayOfWeek; // 0 (dim) -> 6 (sam)
         $weeklyBlockedSlots = $this->blockedSlots->where('day_of_week', $day);
 
@@ -273,6 +519,10 @@ class Place extends Model
             return false;
         }
         if ($this->availability_end_date && $dayEnd->gt($this->availability_end_date->endOfDay())) {
+            return false;
+        }
+
+        if ($this->hasRentalRules() && $this->allowedSegmentsForDate($date) === []) {
             return false;
         }
 

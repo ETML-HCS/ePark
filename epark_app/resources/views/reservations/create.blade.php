@@ -1,15 +1,16 @@
 <x-app-layout>
     @php
-        $placesPayload = $places->map(function ($place) use ($placeSegments, $segments) {
+        $selectedDateCarbon = \Illuminate\Support\Carbon::parse($selectedDate)->startOfDay();
+        $placesPayload = $places->map(function ($place) use ($placeSegments, $segments, $selectedDateCarbon) {
             return [
                 'id' => $place->id,
                 'nom' => $place->nom,
                 'adresse' => $place->site?->adresse ?? '',
                 'site_id' => $place->site_id,
                 'site_nom' => $place->site?->nom ?? 'Parking',
-                'hourly_price' => ($place->hourly_price_cents ?? 0) / 100,
+                'hourly_price' => $place->minHourlyPriceCents() / 100,
                 'availableSegments' => $placeSegments[$place->id] ?? [],
-                'quotes' => collect($segments)->map(fn ($period, $key) => \App\Support\BookingPeriod::amount($place->hourly_price_cents ?? 0, $key))->all(),
+                'quotes' => collect($segments)->map(fn ($period, $key) => $place->quoteCentsFor($selectedDateCarbon, $key))->all(),
             ];
         })->values();
     @endphp
@@ -36,7 +37,8 @@
             return this.availablePlaces.find(p => String(p.id) === String(this.selectedPlace));
         },
         money(cents) {
-            return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format((cents || 0) / 100);
+            if (!cents || Number(cents) === 0) return 'Gratuit';
+            return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format(Number(cents) / 100);
         },
         pickDefaults(allowSegmentSwitch = false) {
             if (!this.segments[this.selectedSegment] || (allowSegmentSwitch && !this.segmentCount(this.selectedSegment))) {
@@ -145,7 +147,7 @@
                                     <span>{{ $place->site?->adresse ?? '' }}</span>
                                 </span>
                                 <span class="place-price">
-                                    <strong x-text="money(@js(collect($segments)->map(fn ($p, $k) => \App\Support\BookingPeriod::amount($place->hourly_price_cents ?? 0, $k))->all())[selectedSegment])">{{ format_chf(($place->hourly_price_cents ?? 0) / 100) }}/h</strong>
+                                    <strong x-text="money(@js(collect($segments)->map(fn ($p, $k) => $place->quoteCentsFor($selectedDateCarbon, $k))->all())[selectedSegment])">{{ $place->priceSummaryLabel() }}</strong>
                                     <small>le créneau</small>
                                 </span>
                             </button>

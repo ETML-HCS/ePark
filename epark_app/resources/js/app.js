@@ -4,11 +4,13 @@ import 'leaflet/dist/leaflet.css';
 import Alpine from 'alpinejs';
 import expressBooking from './express-booking';
 import { parkingMap, sitePickerMap } from './parking-map';
+import rentalRulesEditor from './rental-rules-editor';
 
 window.Alpine = Alpine;
 Alpine.data('expressBooking', expressBooking);
 Alpine.data('parkingMap', parkingMap);
 Alpine.data('sitePickerMap', sitePickerMap);
+Alpine.data('rentalRulesEditor', rentalRulesEditor);
 
 Alpine.start();
 

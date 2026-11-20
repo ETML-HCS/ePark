@@ -34,7 +34,16 @@
                             </p>
                         @endif
                         @if($place->is_group_reserved)<p class="text-xs text-indigo-800 mt-3">Groupe privé : {{ $place->group_name }}</p>@endif
-                        <div class="flex items-end justify-between gap-2 mt-auto pt-6"><p class="text-sm"><strong>{{ format_chf(($place->hourly_price_cents ?? 0) / 100) }}</strong> / heure</p><a href="{{ route('express.index', ['place_id' => $place->id, 'site_id' => $place->site_id]) }}" class="text-link text-sm">Voir les créneaux</a></div>
+                        @if($place->hasRentalRules())
+                            <div class="mt-3 p-3 rounded-xl bg-[#f8fafc] border border-[#dce3ed]">
+                                @include('places.partials.weekly-visual-calendar', [
+                                    'place' => $place,
+                                    'compact' => true,
+                                    'labelClass' => 'text-slate-600',
+                                ])
+                            </div>
+                        @endif
+                        <div class="flex items-end justify-between gap-2 mt-auto pt-6"><p class="text-sm"><strong>{{ $place->priceSummaryLabel() }}</strong></p><a href="{{ route('express.index', ['place_id' => $place->id, 'site_id' => $place->site_id]) }}" class="text-link text-sm">Voir les créneaux</a></div>
                     </article>
                 @empty
                     <div class="booking-empty col-span-full">

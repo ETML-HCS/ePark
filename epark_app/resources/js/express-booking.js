@@ -22,7 +22,10 @@ export default (config) => ({
     get availablePlaces() { return this.sitePlaces.filter(p => p.availableSegments.includes(this.selectedSegment)); },
     get currentPlace() { return this.availablePlaces.find(p => String(p.id) === this.selectedPlaceId); },
     get formattedDate() { return new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(this.date + 'T12:00:00')); },
-    money(cents) { return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format((cents || 0) / 100); },
+    money(cents) {
+        if (!cents || Number(cents) === 0) return 'Gratuit';
+        return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format(Number(cents) / 100);
+    },
     segmentCount(key) { return this.sitePlaces.filter(p => p.availableSegments.includes(key)).length; },
     chooseDefaults(changeSegment = false) {
         if (!this.config.segments[this.selectedSegment] || (changeSegment && !this.segmentCount(this.selectedSegment))) {

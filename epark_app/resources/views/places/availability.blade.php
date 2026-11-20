@@ -38,6 +38,21 @@
                 </div>
             @endif
 
+            @if($place->hasRentalRules())
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-gray-900">Plages de location &amp; tarifs actifs</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Aperçu des créneaux ouverts et de leurs tarifs horaires. Les créneaux bloqués ci-dessous viennent s’y superposer.</p>
+                        </div>
+                        <a href="{{ route('places.edit', $place->id) }}" class="booking-secondary !min-h-[38px] !py-1.5 !px-3 !text-xs">Modifier les plages et tarifs</a>
+                    </div>
+                    <div class="flex justify-center">
+                        @include('places.partials.weekly-visual-calendar', ['place' => $place])
+                    </div>
+                </div>
+            @endif
+
             {{-- Hebdomadaires --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="p-6 border-b border-gray-100">

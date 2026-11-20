@@ -65,7 +65,7 @@ class PlaceBlockedSlotsService
                 ->values()->all();
 
             $hours = $this->computeAvailableHours($place, $date, $reservations);
-            if (! empty($hours)) {
+            if (! empty($placeSegments[$place->id]) || (! $place->hasRentalRules() && ! empty($hours))) {
                 $placeHours[$place->id] = $hours;
                 $filteredPlaces->push($place);
             }
@@ -105,8 +105,26 @@ class PlaceBlockedSlotsService
             ->whereNotNull('end_time');
 
         $hours = [];
+        $hasRentalRules = $place->hasRentalRules();
+        $allowedSegments = $hasRentalRules ? $place->allowedSegmentsForDate($date) : [];
 
         foreach (range(0, 23) as $h) {
+            if ($hasRentalRules) {
+                $hourStartMin = $h * 60;
+                $hourEndMin = ($h + 1) * 60;
+                $fitsRule = false;
+                foreach ($allowedSegments as $segmentKey) {
+                    $period = BookingPeriod::SEGMENTS[$segmentKey] ?? null;
+                    if ($period !== null && $hourStartMin >= $period['start'] && $hourEndMin <= $period['end']) {
+                        $fitsRule = true;
+                        break;
+                    }
+                }
+                if (! $fitsRule) {
+                    continue;
+                }
+            }
+
             $start = $date->copy()->setTime($h, 0);
             $end = $start->copy()->addHour();
 

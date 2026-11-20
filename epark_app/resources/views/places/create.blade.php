@@ -89,7 +89,7 @@
 
                 {{-- Tarif horaire --}}
                 <div>
-                    <label for="hourly_price" class="block text-sm font-semibold mb-1.5">Tarif horaire (CHF) <span class="text-rose-700">*</span></label>
+                    <label for="hourly_price" class="block text-sm font-semibold mb-1.5">Tarif horaire par défaut (CHF) <span class="text-rose-700">*</span></label>
                     <div class="grid gap-3 sm:grid-cols-2 items-start">
                         <div class="relative">
                             <input type="number" id="hourly_price" name="hourly_price" x-model="price" min="0" step="0.05" class="ep-input pr-14 font-bold text-lg" required>
@@ -104,6 +104,9 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Plages de location par jour et créneau (max 5) --}}
+                @include('places.partials.rental-rules-editor')
 
                 {{-- Délai d'annulation --}}
                 <div>
