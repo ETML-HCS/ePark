@@ -77,7 +77,8 @@ class PlaceRentalRulesTest extends TestCase
             ->get(route('places.create'))
             ->assertOk()
             ->assertSee('Semaine gratuit + Week-end payant')
-            ->assertSee('Votre planning &amp; tarifs en un coup d’œil', false);
+            ->assertSee('Choisissez un tarif, puis cliquez sur le planning')
+            ->assertSee('Options avancées');
 
         $this->actingAs($owner)
             ->get(route('places.blocked-slots.edit', $place->id))
