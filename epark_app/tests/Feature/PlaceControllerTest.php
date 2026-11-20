@@ -18,6 +18,7 @@ class PlaceControllerTest extends TestCase
         $user = User::factory()->create(['role' => $role, 'onboarded' => true]);
         $site = Site::factory()->create(['user_id' => $user->id]);
         $user->update(['favorite_site_id' => $site->id]);
+
         return $user;
     }
 
@@ -176,6 +177,26 @@ class PlaceControllerTest extends TestCase
         $this->assertDatabaseHas('places', ['nom' => 'Nouvelle Place']);
     }
 
+    public function test_creating_place_with_duplicate_new_site_name_returns_validation_error(): void
+    {
+        $owner = $this->onboardedUser('proprietaire');
+        Site::factory()->create([
+            'user_id' => $owner->id,
+            'nom' => 'Parking Centre',
+        ]);
+
+        $response = $this->actingAs($owner)->post('/places', [
+            'create_new_site' => 1,
+            'site_nom' => 'Parking Centre',
+            'site_adresse' => 'Rue du Centre 1',
+            'nom' => 'Place A1',
+            'hourly_price' => 4.00,
+        ]);
+
+        $response->assertSessionHasErrors('site_nom');
+        $this->assertDatabaseMissing('places', ['nom' => 'Place A1']);
+    }
+
     public function test_owner_can_create_group_place_from_saved_group(): void
     {
         $owner = $this->onboardedUser('proprietaire');
@@ -234,6 +255,29 @@ class PlaceControllerTest extends TestCase
         $this->assertDatabaseHas('places', ['nom' => 'Place Modifiée']);
     }
 
+    public function test_owner_can_toggle_place_active_state_on_update(): void
+    {
+        $owner = $this->onboardedUser('proprietaire');
+        $site = Site::factory()->create(['user_id' => $owner->id]);
+        $place = Place::factory()->create(['user_id' => $owner->id, 'site_id' => $site->id, 'is_active' => true]);
+
+        $this->actingAs($owner)->put("/places/{$place->id}", [
+            'nom' => $place->nom,
+            'hourly_price' => 3.00,
+            'is_active' => '0',
+        ])->assertRedirect(route('places.mes'));
+
+        $this->assertFalse($place->fresh()->is_active);
+
+        $this->actingAs($owner)->put("/places/{$place->id}", [
+            'nom' => $place->nom,
+            'hourly_price' => 3.00,
+            'is_active' => '1',
+        ])->assertRedirect(route('places.mes'));
+
+        $this->assertTrue($place->fresh()->is_active);
+    }
+
     // ─── Non-onboarded redirect ──────────────────────────
 
     public function test_non_onboarded_user_is_redirected(): void
@@ -242,5 +286,35 @@ class PlaceControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get('/places');
         $response->assertRedirect(route('onboarding.index'));
+    }
+
+    public function test_tenant_sees_offer_place_prompts_when_system_has_no_places(): void
+    {
+        $tenant = User::factory()->create(['role' => 'locataire', 'onboarded' => true]);
+
+        $this->actingAs($tenant)
+            ->get('/express')
+            ->assertOk()
+            ->assertSee('Mes places')
+            ->assertSee('Aucune place n’est encore enregistrée sur ePark')
+            ->assertSee(route('places.create'));
+
+        $this->actingAs($tenant)
+            ->get('/')
+            ->assertOk()
+            ->assertSee('Proposer une place')
+            ->assertSee(route('places.create'));
+
+        $this->actingAs($tenant)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Proposer ma place')
+            ->assertSee(route('places.create'));
+
+        $this->actingAs($tenant)
+            ->get('/profile')
+            ->assertOk()
+            ->assertSee('Proposer une place')
+            ->assertSee(route('places.create'));
     }
 }

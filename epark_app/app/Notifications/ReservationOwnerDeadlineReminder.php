@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Reservation;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -11,9 +12,7 @@ class ReservationOwnerDeadlineReminder extends Notification
 {
     use Queueable;
 
-    public function __construct(private Reservation $reservation)
-    {
-    }
+    public function __construct(private Reservation $reservation) {}
 
     /**
      * @return array<int, string>
@@ -25,17 +24,17 @@ class ReservationOwnerDeadlineReminder extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $notifiable;
 
         $placeName = optional($this->reservation->place)->nom ?? 'votre place';
-        $start = $this->reservation->date_debut?->format('d/m/Y H:i');
+        $start = $this->reservation->date_debut->format('d/m/Y H:i');
 
         return (new MailMessage)
             ->subject('Rappel: validation requise sous 90 minutes')
-            ->greeting('Bonjour ' . $user->name)
-            ->line('La réservation pour la place "' . $placeName . '" est toujours en attente.')
-            ->line('Début de la réservation: ' . $start)
+            ->greeting('Bonjour '.$user->name)
+            ->line('La réservation pour la place "'.$placeName.'" est toujours en attente.')
+            ->line('Début de la réservation: '.$start)
             ->line('Il reste environ 90 minutes avant l’échéance de validation à 24h.')
             ->line('Sans action, la règle automatique de la place sera appliquée (accord/refus).')
             ->action('Valider ou refuser maintenant', url('/reservations?status=en_attente'))

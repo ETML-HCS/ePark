@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Place;
 use App\Models\PlaceUnavailability;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class PlaceBlockedSlotsController extends Controller
@@ -61,7 +63,7 @@ class PlaceBlockedSlotsController extends Controller
             $legacySlots = $request->input('slots', []);
             if (is_array($legacySlots)) {
                 foreach ($legacySlots as $legacySlot) {
-                    if (!is_array($legacySlot)) {
+                    if (! is_array($legacySlot)) {
                         continue;
                     }
                     $legacyDay = $legacySlot['day_of_week'] ?? null;
@@ -91,15 +93,15 @@ class PlaceBlockedSlotsController extends Controller
                 $start = $slot['start'] ?? $slot['start_time'] ?? null;
                 $end = $slot['end'] ?? $slot['end_time'] ?? null;
 
-                if (!$start || !$end) {
+                if (! $start || ! $end) {
                     continue;
                 }
 
-                if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $start)) {
+                if (! preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $start)) {
                     continue;
                 }
 
-                if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $end)) {
+                if (! preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $end)) {
                     continue;
                 }
 
@@ -151,6 +153,7 @@ class PlaceBlockedSlotsController extends Controller
         }
 
         $place->save();
+        Cache::put('admin_stats_version', ((int) Cache::get('admin_stats_version', 1)) + 1);
 
         return back()->with('success', 'Règles hebdomadaires mises à jour.');
     }
@@ -166,7 +169,7 @@ class PlaceBlockedSlotsController extends Controller
             'reason' => 'nullable|string|max:255',
         ]);
 
-        if (!empty($validated['start_time']) && !empty($validated['end_time']) && $validated['end_time'] <= $validated['start_time']) {
+        if (! empty($validated['start_time']) && ! empty($validated['end_time']) && $validated['end_time'] <= $validated['start_time']) {
             return back()->withErrors(['end_time' => 'L\'heure de fin doit être après l\'heure de début.']);
         }
 
@@ -176,6 +179,7 @@ class PlaceBlockedSlotsController extends Controller
             'end_time' => $validated['end_time'] ?? null,
             'reason' => $validated['reason'] ?? null,
         ]);
+        Cache::put('admin_stats_version', ((int) Cache::get('admin_stats_version', 1)) + 1);
 
         return back()->with('success', 'Indisponibilité ajoutée.');
     }
@@ -189,6 +193,7 @@ class PlaceBlockedSlotsController extends Controller
         }
 
         $unavailability->delete();
+        Cache::put('admin_stats_version', ((int) Cache::get('admin_stats_version', 1)) + 1);
 
         return back()->with('success', 'Indisponibilité supprimée.');
     }
@@ -209,9 +214,9 @@ class PlaceBlockedSlotsController extends Controller
             return;
         }
 
-        /** @var \App\Models\User|null $owner */
+        /** @var User|null $owner */
         $owner = $request->user();
-        if (!$owner) {
+        if (! $owner) {
             return;
         }
 
@@ -221,6 +226,7 @@ class PlaceBlockedSlotsController extends Controller
         $entries = $entries->map(function (array $entry) use ($groupName, $groupCode, &$updatedByCode) {
             if (mb_strtolower((string) $entry['code']) === mb_strtolower($groupCode)) {
                 $updatedByCode = true;
+
                 return [
                     'name' => $groupName,
                     'code' => $groupCode,
@@ -230,11 +236,12 @@ class PlaceBlockedSlotsController extends Controller
             return $entry;
         });
 
-        if (!$updatedByCode) {
+        if (! $updatedByCode) {
             $updatedByName = false;
             $entries = $entries->map(function (array $entry) use ($groupName, $groupCode, &$updatedByName) {
                 if (mb_strtolower((string) $entry['name']) === mb_strtolower($groupName)) {
                     $updatedByName = true;
+
                     return [
                         'name' => $groupName,
                         'code' => $groupCode,
@@ -244,7 +251,7 @@ class PlaceBlockedSlotsController extends Controller
                 return $entry;
             });
 
-            if (!$updatedByName) {
+            if (! $updatedByName) {
                 $entries->push([
                     'name' => $groupName,
                     'code' => $groupCode,

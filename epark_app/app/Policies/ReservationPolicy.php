@@ -96,15 +96,20 @@ class ReservationPolicy
      */
     private function isPlaceOwner(User $user, Reservation $reservation): bool
     {
-        $ownerId = $reservation->place->user_id 
-            ?? $reservation->place->site?->user_id;
+        $place = $reservation->place;
+        if ($place === null) {
+            return false;
+        }
+
+        $ownerId = $place->user_id ?? $place->site?->user_id;
 
         return $user->id === $ownerId;
     }
 
     private function canCancelWithDeadline(Reservation $reservation): bool
     {
-        $deadlineHours = (int) ($reservation->place?->cancel_deadline_hours ?? 24);
+        $place = $reservation->place;
+        $deadlineHours = (int) ($place !== null ? ($place->cancel_deadline_hours ?? 24) : 24);
         $deadline = $reservation->date_debut->copy()->subHours($deadlineHours);
 
         return now()->lt($deadline);

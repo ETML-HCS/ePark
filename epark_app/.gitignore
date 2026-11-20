@@ -11,6 +11,10 @@
 /.phpunit.cache
 /.vscode
 /.zed
+/output/
+/.playwright-cli/
+/_deploy/
+/epark_deploy_*.zip
 /auth.json
 /node_modules
 /public/build

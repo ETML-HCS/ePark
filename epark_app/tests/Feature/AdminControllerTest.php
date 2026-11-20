@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Place;
-use App\Models\Reservation;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,6 +17,7 @@ class AdminControllerTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin', 'onboarded' => true]);
         $site = Site::factory()->create(['user_id' => $admin->id]);
         $admin->update(['favorite_site_id' => $site->id]);
+
         return $admin;
     }
 

@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Place;
-use App\Models\Reservation;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,6 +16,7 @@ class DashboardControllerTest extends TestCase
         $user = User::factory()->create(['role' => $role, 'onboarded' => true]);
         $site = Site::factory()->create(['user_id' => $user->id]);
         $user->update(['favorite_site_id' => $site->id]);
+
         return $user;
     }
 

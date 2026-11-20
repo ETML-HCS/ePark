@@ -7,7 +7,7 @@ use App\Models\PlaceUnavailability;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\PlaceUnavailability>
+ * @extends Factory<PlaceUnavailability>
  */
 class PlaceUnavailabilityFactory extends Factory
 {

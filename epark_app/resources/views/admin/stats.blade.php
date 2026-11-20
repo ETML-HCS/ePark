@@ -1,91 +1,99 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Statistiques</h2>
-    </x-slot>
+    <div class="booking-page">
+        <div class="booking-heading">
+            <div>
+                <h1>Statistiques</h1>
+                <p>Occupation, volume de réservations et classement des places.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.dashboard') }}" class="booking-secondary">Vue d’ensemble</a>
+                <a href="{{ route('admin.stats') }}" aria-current="page" class="booking-primary">Statistiques</a>
+                <a href="{{ route('admin.stats.export', request()->query()) }}" class="booking-secondary">Exporter CSV</a>
+            </div>
+        </div>
 
-    <div class="space-y-8">
-        <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-5">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <section class="ep-card p-5 mb-6">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-2">Annee</label>
-                    <select name="year" class="w-full rounded-lg border-gray-200">
+                    <label for="stats-year" class="block text-xs font-semibold text-slate-600 mb-1.5">Année</label>
+                    <select id="stats-year" name="year" class="ep-input">
                         @foreach($yearOptions as $yearOption)
                             <option value="{{ $yearOption }}" @selected($selectedYear === $yearOption)>{{ $yearOption }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-2">Site</label>
-                    <select name="site_id" class="w-full rounded-lg border-gray-200">
-                        <option value="">Tous</option>
+                    <label for="stats-site" class="block text-xs font-semibold text-slate-600 mb-1.5">Site</label>
+                    <select id="stats-site" name="site_id" class="ep-input">
+                        <option value="">Tous les sites</option>
                         @foreach($sites as $site)
                             <option value="{{ $site->id }}" @selected((string) $selectedSiteId === (string) $site->id)>{{ $site->nom }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-2">Statut</label>
-                    <select name="status" class="w-full rounded-lg border-gray-200">
-                        <option value="">Tous</option>
+                    <label for="stats-status" class="block text-xs font-semibold text-slate-600 mb-1.5">Statut</label>
+                    <select id="stats-status" name="status" class="ep-input">
+                        <option value="">Tous les statuts</option>
                         <option value="en_attente" @selected($selectedStatus === 'en_attente')>En attente</option>
-                        <option value="confirmée" @selected($selectedStatus === 'confirmée')>Confirmee</option>
-                        <option value="annulée" @selected($selectedStatus === 'annulée')>Annulee</option>
-                        <option value="paid" @selected($selectedStatus === 'paid')>Payee</option>
+                        <option value="confirmée" @selected($selectedStatus === 'confirmée')>Confirmée</option>
+                        <option value="annulée" @selected($selectedStatus === 'annulée')>Annulée</option>
+                        <option value="paid" @selected($selectedStatus === 'paid')>Payée</option>
                     </select>
                 </div>
-                <div class="flex items-end">
-                    <button class="w-full md:w-auto px-4 py-2 rounded-lg bg-gray-900 text-white">Filtrer</button>
+                <div>
+                    <button type="submit" class="booking-primary w-full">Filtrer</button>
                 </div>
             </form>
+        </section>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="ep-card p-5">
+                <p class="text-xs font-semibold text-slate-600 uppercase">Réservations</p>
+                <p class="text-2xl font-bold mt-2">{{ $totalReservations }}</p>
+                <p class="text-xs text-slate-500 mt-1">Période {{ $start->format('d.m.Y') }} – {{ $end->format('d.m.Y') }}</p>
+            </div>
+            <div class="ep-card p-5">
+                <p class="text-xs font-semibold text-slate-600 uppercase">Montants déclarés (payés)</p>
+                <p class="text-2xl font-bold mt-2">{{ format_chf($totalRevenueCents / 100) }}</p>
+                <p class="text-xs text-slate-500 mt-1">Selon les filtres appliqués</p>
+            </div>
+            <div class="ep-card p-5">
+                <p class="text-xs font-semibold text-slate-600 uppercase">Taux d’occupation</p>
+                <p class="text-2xl font-bold mt-2">{{ $occupancyRate }}%</p>
+                <p class="text-xs text-slate-500 mt-1">{{ $reservedHours }} heures réservées</p>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-5">
-                <p class="text-sm text-gray-500">Reservations</p>
-                <p class="text-2xl font-bold">{{ $totalReservations }}</p>
-                <p class="text-xs text-gray-400 mt-1">Periode {{ $start->format('d/m/Y') }} - {{ $end->format('d/m/Y') }}</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-5">
-                <p class="text-sm text-gray-500">Revenus (payes)</p>
-                <p class="text-2xl font-bold">{{ format_chf($totalRevenueCents / 100) }}</p>
-                <p class="text-xs text-gray-400 mt-1">Apres filtre statut</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-5">
-                <p class="text-sm text-gray-500">Taux d'occupation</p>
-                <p class="text-2xl font-bold">{{ $occupancyRate }}%</p>
-                <p class="text-xs text-gray-400 mt-1">{{ $reservedHours }} heures reservees</p>
-            </div>
-        </div>
-
-        <div class="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100">
-                <h3 class="text-lg font-semibold">Top places</h3>
-                <p class="text-xs text-gray-500">Classement par nombre de reservations</p>
+        <section class="ep-card overflow-hidden">
+            <div class="px-5 py-4 border-b border-[#dce3ed]">
+                <h2 class="text-base font-bold">Top places</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Classement par nombre de réservations</p>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-[#f8fafc] border-b border-[#dce3ed]">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Place</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Site</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Reservations</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Revenus</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600">Place</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600">Site</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600">Réservations</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600">Montant total</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y">
+                    <tbody class="divide-y divide-[#dce3ed]">
                         @forelse($topPlaces as $row)
                             <tr>
-                                <td class="px-4 py-3 text-sm">{{ optional($row->place)->nom ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 text-sm">{{ optional(optional($row->place)->site)->nom ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 text-sm">{{ $row->reservations_count }}</td>
-                                <td class="px-4 py-3 text-sm">{{ format_chf(($row->revenue_cents ?? 0) / 100) }}</td>
+                                <td class="px-4 py-3 font-semibold">{{ optional($row->place)->nom ?? 'Place archivée' }}</td>
+                                <td class="px-4 py-3 text-slate-600">{{ optional(optional($row->place)->site)->nom ?? 'N/A' }}</td>
+                                <td class="px-4 py-3">{{ $row->reservations_count }}</td>
+                                <td class="px-4 py-3 font-semibold">{{ format_chf(($row->revenue_cents ?? 0) / 100) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500">Aucune place pour cette periode.</td></tr>
+                            <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">Aucune place pour cette période.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
     </div>
 </x-app-layout>

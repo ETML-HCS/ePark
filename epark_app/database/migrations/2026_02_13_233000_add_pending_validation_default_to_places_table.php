@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('places', function (Blueprint $table) {
-            if (!Schema::hasColumn('places', 'pending_validation_default')) {
+            if (! Schema::hasColumn('places', 'pending_validation_default')) {
                 $table->string('pending_validation_default', 20)
                     ->default('manual')
                     ->after('cancel_deadline_hours');

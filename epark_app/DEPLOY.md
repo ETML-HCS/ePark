@@ -1,101 +1,29 @@
-# Déploiement ePark sur Hostinger
+# Publication ePark sur Hostinger
 
-## Commande de déploiement complète
+Depuis `epark_app`, exécuter `./deploy-full.ps1`. Le script compile Vite, vérifie les tests puis appelle `scripts/deploy-release.ps1`. `-SkipUpload` prépare uniquement l’archive.
 
-```powershell
-.\deploy-full.ps1 -AllowScp -UnzipRemote -IncludeVendor
-```
+Le déploiement utilise la connexion SSH existante `athys.ch` et la clé locale `athys_hosting_ed25519`. Les mots de passe ne sont jamais passés en arguments.
 
-## Options du script
+## Structure du serveur
 
-- **`-IncludeVendor`** : Inclut le dossier `vendor/` dans le zip (RECOMMANDÉ pour éviter les problèmes de chemins Composer)
-- **`-AllowScp`** : Utilise `scp` au lieu de `rsync` (requis sur Windows sans rsync)
-- **`-UnzipRemote`** : Extrait et configure automatiquement sur le serveur
-- **`-SkipUpload`** : Crée le zip sans uploader (pour test local)
+- Application privée : `/home/u871035213/domains/athys.ch/epark-releases/<version>`.
+- Configuration, fichiers et sauvegardes privés : `epark-shared` au même niveau.
+- Version active : lien `epark-current`.
+- Seul le contenu de `public/` est exposé dans `public_html/epark`.
+- La configuration initiale provient de `.env.production`. Une configuration partagée existante n’est jamais écrasée. Ne jamais régénérer sa clé `APP_KEY`.
 
-## Ce que fait le script
+Les archives excluent la configuration locale, SQLite, les fixtures, les caches, les journaux et les dépendances de développement. Composer installe les dépendances de production sur Linux à partir de `composer.lock`. La base MySQL existante est sauvegardée avant les migrations ; aucun seeder n’est lancé. Les anciennes versions et les sauvegardes restent disponibles hors de la racine web.
 
-1. **Build des assets Vite** : Compile CSS/JS avec `npm run build`
-2. **Création du zip** : Package l'application (avec ou sans `vendor/`)
-3. **Nettoyage** : Exclut les caches/logs Windows pour éviter les conflits
-4. **Upload SSH** : Transfère via `scp` vers `/epark/` sur le serveur
-5. **Configuration automatique** :
-   - Copie `public/index.php` → `index.php` (racine)
-   - Ajuste les chemins (`../vendor` → `vendor`, `../bootstrap` → `bootstrap`)
-   - Copie `public/build/` → `build/` (assets Vite accessibles)
-   - **Régénère l'autoload Composer** (`composer dump-autoload --optimize`) → **FIX chemins Windows**
-   - Supprime les caches de package discovery
-   - Définit les permissions (`storage/`, `bootstrap/cache/`)
-   - Nettoie tous les caches Laravel (`optimize:clear`, `view:clear`, etc.)
-   - Régénère la découverte de packages (`package:discover`)
-   - Exécute les migrations (`migrate --force`)
-   - Cache la configuration optimisée (`config:cache`)
+Le planificateur Laravel doit être exécuté chaque minute par une entrée cron dédiée à ePark. `scripts/install-scheduler.sh` conserve les autres tâches et évite les doublons. Les journaux se trouvent dans le stockage privé partagé.
 
-## Problèmes résolus automatiquement
+Sur l’hébergement vérifié le 24 octobre 2026, `crontab` n’est pas disponible en SSH. Les rappels et les décisions automatiques nécessitent donc une tâche planifiée dans le panneau Hostinger, avec la fréquence `* * * * *` et la commande `/opt/alt/php84/usr/bin/php /home/u871035213/domains/athys.ch/epark-current/artisan schedule:run`. Le script écrit aussi cette commande dans `epark-shared/scheduler-command.txt`. La réservation et les confirmations manuelles fonctionnent sans cette tâche.
 
-✅ **Chemins Windows dans Composer** : L'autoload est régénéré sur le serveur  
-✅ **Vues compilées avec X:/** : Exclues du zip, régénérées sur serveur  
-✅ **CSS/JS non chargés** : Assets Vite copiés de `public/build/` vers `build/`  
-✅ **index.php incorrect** : Copié depuis `public/` avec chemins ajustés  
-✅ **Variables échappées** : Le script copie le fichier source original  
-✅ **Package discovery invalide** : Caches supprimés et régénérés  
+`scripts/deploy-release.ps1 -StageOnly` prépare une nouvelle version et sauvegarde la base, sans migrer ni activer. Les identifiants de version doivent être uniques.
 
-## Configuration serveur requise
+## Vérification et retour arrière
 
-- **Document root** : `/home/u871035213/domains/athys.ch/public_html/epark/`
-- **Structure** : Le document root sert directement `epark/`, PAS `epark/public/`
-- **SSH key** : `C:\Users\helde\.ssh\copilot_epark_key`
-- **Fichier .env** : `.env.production` (copié vers `.env` sur serveur)
+Vérifier l’accueil, `/login`, `/express`, `/up`, les assets référencés par le manifeste Vite et les parcours authentifiés dans le navigateur. Les chemins `/.env`, `/composer.json` et `/vendor/autoload.php` doivent être inaccessibles. Tester les données synthétiques sans envoyer de messages aux utilisateurs.
 
-## Commandes manuelles (si nécessaire)
+Pour revenir à une version antérieure, rétablir son lien `epark-current` et son dossier public conservé sous `epark-shared/backups/web-<version>`. Ne restaurer une base qu’après avoir évalué les données créées depuis la sauvegarde. Ne jamais supprimer la configuration ou le stockage partagé pour revenir en arrière.
 
-```bash
-# Régénérer l'autoload manuellement
-composer dump-autoload --optimize
-
-# Nettoyer tous les caches
-php artisan optimize:clear
-php artisan view:clear
-php artisan config:clear
-
-# Régénérer la découverte de packages
-rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
-php artisan package:discover --ansi
-
-# Copier les assets build
-rm -rf build && cp -r public/build .
-
-# Fixer index.php
-cp public/index.php index.php
-sed -i "s#__DIR__\.\x27/../vendor/autoload.php\x27#__DIR__.\x27/vendor/autoload.php\x27#g" index.php
-sed -i "s#__DIR__\.\x27/../bootstrap/app.php\x27#__DIR__.\x27/bootstrap/app.php\x27#g" index.php
-```
-
-## Vérification post-déploiement
-
-```bash
-# Vérifier que le site répond HTTP 200
-curl -I https://epark.athys.ch
-
-# Vérifier les assets CSS
-curl -I https://epark.athys.ch/build/assets/app-*.css
-
-# Vérifier les logs d'erreur
-tail -n 50 storage/logs/laravel.log
-```
-
-## En cas d'erreur HTTP 500
-
-1. Vérifier les logs : `tail storage/logs/laravel.log`
-2. Tester l'autoload : `php -r 'require __DIR__."/vendor/autoload.php"; echo "OK\n";'`
-3. Tester artisan : `php artisan --version`
-4. Régénérer l'autoload : `composer dump-autoload --optimize`
-5. Nettoyer les caches : `php artisan optimize:clear`
-
-## Restauration backup
-
-```bash
-cd /home/u871035213/domains/athys.ch/public_html
-rm -rf epark
-tar -xzf ~/backups/epark_backup_YYYYMMDD-HHMMSS.tar.gz
-```
+L’application ne possède pas de prestataire de paiement en ligne : les paiements déclarés et remboursements sont un suivi manuel. Ne pas présenter ces écritures comme des mouvements bancaires.

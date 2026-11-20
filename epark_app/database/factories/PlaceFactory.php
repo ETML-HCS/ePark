@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Place>
+ * @extends Factory<Place>
  */
 class PlaceFactory extends Factory
 {
@@ -19,7 +19,7 @@ class PlaceFactory extends Factory
         return [
             'user_id' => User::factory(),
             'site_id' => Site::factory(),
-            'nom' => 'Place ' . fake()->bothify('??-##'),
+            'nom' => 'Place '.fake()->bothify('??-##'),
             'type' => fake()->randomElement(['voiture', 'moto', 'vélo']),
             'dimensions_json' => ['longueur' => 5, 'largeur' => 2.5],
             'equipments_json' => ['borne_electrique' => false],

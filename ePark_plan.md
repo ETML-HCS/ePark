@@ -50,7 +50,7 @@
 Ce plan liste les phases réalisées et les actions prioritaires pour stabiliser la production et automatiser le déploiement.
 
 ## Phase actuelle — stabilisation & release
-- Changements réalisés : UI harmonisee (palette/composants), logo ePark, accessibilite de base (aria/contrastes), stats admin, annulation/modification reservation, soft delete places.
+- Changements réalisés : Mode Express (version ultra-rapide 1-clic), Clé Abonné (accès direct sans mot de passe), Paiement automatique en un clic, UI harmonisee (palette/composants), logo ePark, accessibilite de base (aria/contrastes), stats admin, annulation/modification reservation, soft delete places.
 
 ## Tâches immédiates (priorité haute)
 1. Exécuter les migrations en production

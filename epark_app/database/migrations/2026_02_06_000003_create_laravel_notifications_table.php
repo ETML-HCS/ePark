@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::hasTable('notifications') && !Schema::hasColumn('notifications', 'notifiable_type')) {
-            if (!Schema::hasTable('app_notifications')) {
+        if (Schema::hasTable('notifications') && ! Schema::hasColumn('notifications', 'notifiable_type')) {
+            if (! Schema::hasTable('app_notifications')) {
                 Schema::rename('notifications', 'app_notifications');
             }
         }
 
-        if (!Schema::hasTable('notifications')) {
+        if (! Schema::hasTable('notifications')) {
             Schema::create('notifications', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->string('type');
@@ -38,7 +38,7 @@ return new class extends Migration
             Schema::drop('notifications');
         }
 
-        if (Schema::hasTable('app_notifications') && !Schema::hasTable('notifications')) {
+        if (Schema::hasTable('app_notifications') && ! Schema::hasTable('notifications')) {
             Schema::rename('app_notifications', 'notifications');
         }
     }

@@ -23,7 +23,13 @@ Cette spécification reprend le contenu fonctionnel principal et intègre les de
 ## Rappel des objectifs
 ePark permet la mise en relation entre particuliers pour la réservation de places de parc à l'heure, avec gestion des disponibilités, réservations, paiements, notifications et back-office.
 
-## Mises à jour récentes (11-02-2026)
+## Mises à jour récentes (19-10-2026) — Mode Express & Clé Abonné
+- **Mode Express (Version Rapide)** : Nouvelle interface épurée (`/express`) permettant de réserver une place et payer en 1 ou 2 clics maximum.
+- **Clé Abonné (Accès direct sans mot de passe)** : Chaque utilisateur dispose d'une clé d'accès unique (`users.express_token`). Permet de se connecter instantanément via URL magique (`/express?key=...`), cookie persistant mémorisé sur l'appareil, ou formulaire à 1 champ sur la page de connexion.
+- **Paiement Automatique (`auto_pay_enabled`)** : Prélèvement direct sans étape intermédiaire de paiement, réservation instantanément confirmée.
+- **Points d'accès rapides** : Liens directs intégrés dans la navigation principale, la page d'accueil, le tableau de bord et la gestion du profil.
+
+## Mises à jour précédentes (11-02-2026)
 - Interface : harmonisation palette et composants (boutons, navigation), contrastes renforcés et aria sur menus.
 - Logo : composant `application-logo` remplacé par l'image ePark.
 - Place : ajout d'un delai d'annulation configurable (12h ou 24h) par le proprietaire.

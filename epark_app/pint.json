@@ -1,0 +1,12 @@
+{
+    "preset": "laravel",
+    "exclude": [
+        "_deploy",
+        ".playwright-cli",
+        "output",
+        "bootstrap/cache",
+        "node_modules",
+        "storage",
+        "vendor"
+    ]
+}

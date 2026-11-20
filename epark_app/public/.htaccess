@@ -1,9 +1,12 @@
 <IfModule mod_rewrite.c>
+    DirectoryIndex index.php
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+    RewriteCond %{HTTP_ACCEPT} text/markdown [NC]
+    RewriteRule ^$ /index.md [END]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
@@ -22,4 +25,38 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    # This app is hosted under athys.ch alongside static sites. Override their CSP
+    # so the existing Alpine expression evaluator and the font stylesheet can load.
+    Header unset Content-Security-Policy
+    Header always unset Content-Security-Policy
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.bunny.net; font-src 'self' https://fonts.bunny.net; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'; upgrade-insecure-requests"
+    Header unset Referrer-Policy
+    Header always set Referrer-Policy "no-referrer"
+    <Files "index.php">
+        Header unset Cache-Control
+        Header always set Cache-Control "no-store, private"
+    </Files>
+</IfModule>
+
+# Interdire l'accès direct aux fichiers cachés
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Public agent resources
+AddType text/markdown .md
+AddType text/plain .txt
+<IfModule mod_headers.c>
+    Header merge Vary Accept
+    Header set Link "</llms.txt>; rel=describedby, </index.md>; rel=alternate"
 </IfModule>

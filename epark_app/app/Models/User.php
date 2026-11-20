@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * App\Models\User
@@ -19,44 +20,32 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function places(): HasMany
     {
         return $this->hasMany(Place::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function sites(): HasMany
     {
         return $this->hasMany(Site::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function favoriteSite(): BelongsTo
     {
         return $this->belongsTo(Site::class, 'favorite_site_id');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany<Reservation, $this>
      */
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
@@ -74,6 +63,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'favorite_site_id',
         'onboarded',
         'secret_group_codes',
+        'express_token',
+        'auto_pay_enabled',
+        'quick_vehicle_plate',
+        'twint_phone',
+        'iban',
+        'payment_instructions',
         'password',
     ];
 
@@ -85,6 +80,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'express_token',
+        'secret_group_codes',
     ];
 
     /**
@@ -96,8 +93,59 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'onboarded' => 'boolean',
+        'auto_pay_enabled' => 'boolean',
         'secret_group_codes' => 'encrypted:array',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (empty($user->express_token)) {
+                $user->express_token = 'epk_'.bin2hex(random_bytes(16));
+            }
+        });
+    }
+
+    /**
+     * Retourne le token express ou en génère un si absent.
+     */
+    public function getOrGenerateExpressToken(): string
+    {
+        if (empty($this->express_token)) {
+            $token = 'epk_'.bin2hex(random_bytes(16));
+            $this->express_token = $token;
+            $this->save();
+
+            return $token;
+        }
+
+        return $this->express_token;
+    }
+
+    /**
+     * Régénère un nouveau token express unique.
+     */
+    public function regenerateExpressToken(): string
+    {
+        $token = 'epk_'.bin2hex(random_bytes(16));
+        $this->express_token = $token;
+        $this->save();
+
+        return $token;
+    }
+
+    /**
+     * Trouve un utilisateur via son token express.
+     */
+    public static function findByExpressToken(?string $token): ?self
+    {
+        $clean = trim((string) $token);
+        if ($clean === '') {
+            return null;
+        }
+
+        return static::where('express_token', $clean)->first();
+    }
 
     /**
      * @return array<int, array{name: string, code: string}>
@@ -169,6 +217,14 @@ class User extends Authenticatable implements MustVerifyEmail
     // -------------------------------------------------------------------------
     // Méthodes utilitaires pour les rôles
     // -------------------------------------------------------------------------
+
+    /**
+     * Retourne l'adresse e-mail uniquement si elle a été vérifiée.
+     */
+    public function verifiedEmail(): ?string
+    {
+        return $this->hasVerifiedEmail() ? $this->email : null;
+    }
 
     /**
      * Vérifie si l'utilisateur est admin.

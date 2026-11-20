@@ -7,7 +7,7 @@ use App\Models\Reservation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Payment>
+ * @extends Factory<Payment>
  */
 class PaymentFactory extends Factory
 {
@@ -31,7 +31,7 @@ class PaymentFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'provider_status' => 'succeeded',
-            'provider_ref' => 'manual-' . now()->timestamp,
+            'provider_ref' => 'manual-'.now()->timestamp,
         ]);
     }
 

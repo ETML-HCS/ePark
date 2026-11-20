@@ -15,16 +15,21 @@ class ReservationPolicyTest extends TestCase
     use RefreshDatabase;
 
     private ReservationPolicy $policy;
+
     private User $owner;
+
     private User $tenant;
+
     private User $admin;
+
     private User $otherUser;
+
     private Reservation $reservation;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->policy = new ReservationPolicy();
+        $this->policy = new ReservationPolicy;
 
         $this->owner = User::factory()->create(['role' => 'proprietaire', 'onboarded' => true]);
         $site = Site::factory()->create(['user_id' => $this->owner->id]);

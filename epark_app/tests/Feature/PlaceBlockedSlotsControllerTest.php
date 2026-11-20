@@ -15,6 +15,7 @@ class PlaceBlockedSlotsControllerTest extends TestCase
     use RefreshDatabase;
 
     private User $owner;
+
     private Place $place;
 
     protected function setUp(): void

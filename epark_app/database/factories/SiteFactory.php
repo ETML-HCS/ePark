@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Site>
+ * @extends Factory<Site>
  */
 class SiteFactory extends Factory
 {
@@ -17,7 +17,7 @@ class SiteFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'nom' => fake()->company() . ' Parking',
+            'nom' => fake()->company().' Parking',
             'adresse' => fake()->address(),
         ];
     }

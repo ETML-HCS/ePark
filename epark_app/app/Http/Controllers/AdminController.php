@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Payment;
 use App\Models\Place;
 use App\Models\Reservation;
@@ -13,7 +14,7 @@ class AdminController extends Controller
 {
     public function index(): View
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
         if ($user->role !== 'admin') {
             abort(403, 'Non autorisé.');
@@ -25,7 +26,7 @@ class AdminController extends Controller
             'places' => Place::count(),
             'reservations' => Reservation::count(),
             'payments' => Payment::count(),
-            'revenue' => Reservation::where('payment_status', 'paid')->sum('amount_cents') / 100,
+            'revenue' => Reservation::where('payment_status', 'paid')->where('statut', '!=', 'annulée')->sum('amount_cents') / 100,
         ];
 
         $recentReservations = Reservation::with(['user', 'place.site'])
@@ -42,6 +43,11 @@ class AdminController extends Controller
             ->limit(10)
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'recentReservations', 'recentPayments', 'recentUsers'));
+        $recentAuditLogs = AuditLog::with('user:id,name')
+            ->orderByDesc('created_at')
+            ->limit(15)
+            ->get();
+
+        return view('admin.dashboard', compact('stats', 'recentReservations', 'recentPayments', 'recentUsers', 'recentAuditLogs'));
     }
 }

@@ -1,0 +1,309 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" width="1200" height="740">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19" />
+      <stop offset="50%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#090D16" />
+    </linearGradient>
+
+    <linearGradient id="windowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#0B0F19" />
+    </linearGradient>
+
+    <!-- Banner Gradient -->
+    <linearGradient id="bannerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#1E1B4B" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+
+    <!-- Big Button Gradient -->
+    <linearGradient id="bigBtnGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="50%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#4F46E5" />
+    </linearGradient>
+
+    <!-- Brand Logo Gradient -->
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" />
+      <stop offset="50%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+
+    <!-- Ambient Glow -->
+    <filter id="ambientGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="60" result="blur" />
+    </filter>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="winShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <style>
+    .font-sans { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+  </style>
+
+  <!-- Canvas Background -->
+  <rect width="100%" height="100%" fill="url(#bgGrad)" />
+
+  <!-- Ambient Light Accents -->
+  <circle cx="240" cy="160" r="180" fill="#059669" opacity="0.12" filter="url(#ambientGlow)" />
+  <circle cx="960" cy="240" r="160" fill="#4F46E5" opacity="0.12" filter="url(#ambientGlow)" />
+
+  <!-- Main Window -->
+  <g transform="translate(40, 30)" filter="url(#winShadow)">
+    <rect width="1120" height="680" rx="16" fill="url(#windowGrad)" stroke="#1F2937" stroke-width="1.5" />
+
+    <!-- Window Title Bar -->
+    <rect width="1120" height="44" rx="16" fill="#111827" />
+    <rect y="32" width="1120" height="12" fill="#111827" stroke="#1F2937" stroke-width="0.5" />
+
+    <!-- Traffic Lights -->
+    <circle cx="24" cy="22" r="6" fill="#EF4444" />
+    <circle cx="44" cy="22" r="6" fill="#F59E0B" />
+    <circle cx="64" cy="22" r="6" fill="#10B981" />
+
+    <!-- URL Bar -->
+    <rect x="360" y="9" width="400" height="26" rx="8" fill="#1F2937" stroke="#374151" stroke-width="0.8" />
+    <circle cx="376" cy="22" r="3.5" fill="#10B981" />
+    <text x="390" y="26" fill="#9CA3AF" font-size="11" font-weight="600" class="font-mono">https://epark.athys.ch/express</text>
+    <text x="735" y="26" fill="#6B7280" font-size="11">⚡</text>
+
+    <!-- Window Body Layout -->
+    <g transform="translate(40, 64)">
+      <!-- Left Column: Express Booking Engine (Width 640) -->
+      <g>
+        <!-- Header Row -->
+        <g>
+          <rect width="96" height="24" rx="12" fill="#065F46" stroke="#059669" stroke-width="0.8" />
+          <circle cx="12" cy="12" r="3" fill="#34D399" />
+          <text x="22" y="16" fill="#34D399" font-size="10" font-weight="800" class="font-sans">MODE EXPRESS</text>
+          <text x="108" y="16" fill="#6EE7B7" font-size="11" font-weight="600" class="font-sans">• 1 ou 2 clics max</text>
+
+          <text x="0" y="52" fill="#FFFFFF" font-size="24" font-weight="900" class="font-sans">Réservation & Paiement 1 Clic</text>
+        </g>
+
+        <!-- Pre-Authenticated Subscriber Banner -->
+        <g transform="translate(0, 68)">
+          <rect width="640" height="60" rx="14" fill="url(#bannerGrad)" stroke="#374151" stroke-width="1" />
+          <g transform="translate(16, 12)">
+            <rect width="112" height="18" rx="6" fill="#1F2937" />
+            <text x="8" y="13" fill="#A5B4FC" font-size="10" font-weight="700" class="font-mono">epk_8a72••••</text>
+            <text x="124" y="13" fill="#34D399" font-size="10" font-weight="700" class="font-sans">✓ Connecté sans accréditation</text>
+
+            <text x="0" y="32" fill="#F9FAFB" font-size="13" font-weight="700" class="font-sans">Bonjour Alexandre 👋</text>
+            <text x="140" y="32" fill="#9CA3AF" font-size="11" class="font-sans">Votre clé d'accès direct est mémorisée sur cet appareil.</text>
+          </g>
+        </g>
+
+        <!-- STEP 1: Quick Date Chips -->
+        <g transform="translate(0, 146)">
+          <text x="0" y="14" fill="#9CA3AF" font-size="10" font-weight="800" class="font-sans">1. CHOISIR LE JOUR</text>
+
+          <g transform="translate(0, 24)">
+            <!-- Active: Aujourd'hui -->
+            <rect width="150" height="54" rx="12" fill="#4F46E5" stroke="#818CF8" stroke-width="1.5" />
+            <text x="14" y="18" fill="#C7D2FE" font-size="9" font-weight="800" class="font-sans">⚡ PRIORITÉ</text>
+            <text x="14" y="36" fill="#FFFFFF" font-size="14" font-weight="800" class="font-sans">Aujourd'hui</text>
+            <text x="14" y="48" fill="#E0E7FF" font-size="10" class="font-sans">19 Octobre</text>
+
+            <!-- Demain -->
+            <g transform="translate(162, 0)">
+              <rect width="150" height="54" rx="12" fill="#111827" stroke="#1F2937" stroke-width="1" />
+              <text x="14" y="18" fill="#6B7280" font-size="9" font-weight="800" class="font-sans">DEMAIN</text>
+              <text x="14" y="36" fill="#D1D5DB" font-size="14" font-weight="700" class="font-sans">Mardi</text>
+              <text x="14" y="48" fill="#9CA3AF" font-size="10" class="font-sans">20 Octobre</text>
+            </g>
+
+            <!-- Dans 2 jours -->
+            <g transform="translate(324, 0)">
+              <rect width="150" height="54" rx="12" fill="#111827" stroke="#1F2937" stroke-width="1" />
+              <text x="14" y="18" fill="#6B7280" font-size="9" font-weight="800" class="font-sans">DANS 2 JOURS</text>
+              <text x="14" y="36" fill="#D1D5DB" font-size="14" font-weight="700" class="font-sans">Mercredi</text>
+              <text x="14" y="48" fill="#9CA3AF" font-size="10" class="font-sans">21 Octobre</text>
+            </g>
+
+            <!-- Date Picker -->
+            <g transform="translate(486, 0)">
+              <rect width="154" height="54" rx="12" fill="#111827" stroke="#1F2937" stroke-width="1" />
+              <text x="14" y="24" fill="#6B7280" font-size="10" font-weight="700" class="font-sans">Autre date...</text>
+              <text x="14" y="42" fill="#9CA3AF" font-size="12" font-weight="600" class="font-sans">📅 Calendrier</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- STEP 2: Day Segment Chips -->
+        <g transform="translate(0, 246)">
+          <text x="0" y="14" fill="#9CA3AF" font-size="10" font-weight="800" class="font-sans">2. MOMENT DE LA JOURNÉE</text>
+
+          <g transform="translate(0, 24)">
+            <!-- Matin -->
+            <rect width="150" height="58" rx="12" fill="#111827" stroke="#1F2937" stroke-width="1" />
+            <text x="14" y="22" fill="#F9FAFB" font-size="12" font-weight="800" class="font-sans">🌅 Matin</text>
+            <text x="14" y="38" fill="#9CA3AF" font-size="10" class="font-mono">08:00 - 12:00</text>
+            <text x="14" y="50" fill="#6B7280" font-size="9" class="font-sans">4 heures</text>
+
+            <!-- Active: Après-midi -->
+            <g transform="translate(162, 0)">
+              <rect width="150" height="58" rx="12" fill="#4F46E5" stroke="#818CF8" stroke-width="1.5" />
+              <text x="14" y="22" fill="#FFFFFF" font-size="12" font-weight="800" class="font-sans">☀️ Après-midi</text>
+              <text x="14" y="38" fill="#E0E7FF" font-size="10" class="font-mono">12:00 - 17:30</text>
+              <text x="14" y="50" fill="#C7D2FE" font-size="9" class="font-sans">5.5 heures</text>
+            </g>
+
+            <!-- Soir -->
+            <g transform="translate(324, 0)">
+              <rect width="150" height="58" rx="12" fill="#111827" stroke="#1F2937" stroke-width="1" />
+              <text x="14" y="22" fill="#F9FAFB" font-size="12" font-weight="800" class="font-sans">🌙 Soir</text>
+              <text x="14" y="38" fill="#9CA3AF" font-size="10" class="font-mono">18:00 - 23:59</text>
+              <text x="14" y="50" fill="#6B7280" font-size="9" class="font-sans">6 heures</text>
+            </g>
+
+            <!-- Nuit -->
+            <g transform="translate(486, 0)">
+              <rect width="154" height="58" rx="12" fill="#111827" stroke="#1F2937" stroke-width="1" />
+              <text x="14" y="22" fill="#F9FAFB" font-size="12" font-weight="800" class="font-sans">🌌 Nuit</text>
+              <text x="14" y="38" fill="#9CA3AF" font-size="10" class="font-mono">00:00 - 07:30</text>
+              <text x="14" y="50" fill="#6B7280" font-size="9" class="font-sans">7.5 heures</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- STEP 3: Auto-Selected Place Cards -->
+        <g transform="translate(0, 350)">
+          <text x="0" y="14" fill="#9CA3AF" font-size="10" font-weight="800" class="font-sans">3. PLACE LIBRE RECOMMANDÉE</text>
+          <text x="490" y="14" fill="#34D399" font-size="11" font-weight="700" class="font-sans">● 8 places disponibles</text>
+
+          <g transform="translate(0, 24)">
+            <!-- Selected Place Card -->
+            <rect width="310" height="74" rx="12" fill="#064E3B" fill-opacity="0.3" stroke="#10B981" stroke-width="1.5" />
+            <text x="16" y="26" fill="#FFFFFF" font-size="14" font-weight="900" class="font-sans">Place A01</text>
+            <rect x="95" y="14" width="54" height="16" rx="4" fill="#10B981" />
+            <text x="101" y="25" fill="#FFFFFF" font-size="8" font-weight="800" class="font-sans">FAVORI</text>
+            <text x="16" y="44" fill="#9CA3AF" font-size="11" class="font-sans">Gare Centrale • Av. de la Gare 14</text>
+            <text x="16" y="60" fill="#34D399" font-size="11" font-weight="800" class="font-mono">CHF 3.00 / heure</text>
+            <circle cx="284" cy="37" r="10" fill="#10B981" />
+            <text x="280" y="41" fill="#FFFFFF" font-size="12">✓</text>
+
+            <!-- Secondary Place Card -->
+            <g transform="translate(330, 0)">
+              <rect width="310" height="74" rx="12" fill="#111827" stroke="#1F2937" stroke-width="1" />
+              <text x="16" y="26" fill="#D1D5DB" font-size="14" font-weight="700" class="font-sans">Place B02</text>
+              <text x="16" y="44" fill="#6B7280" font-size="11" class="font-sans">Bel-Air • Rue Centrale 8</text>
+              <text x="16" y="60" fill="#9CA3AF" font-size="11" font-weight="800" class="font-mono">CHF 2.50 / heure</text>
+              <circle cx="284" cy="37" r="10" stroke="#374151" stroke-width="1.5" fill="none" />
+            </g>
+          </g>
+        </g>
+
+        <!-- STEP 4: Auto-Pay Bar & Big 1-Click Action Button -->
+        <g transform="translate(0, 470)">
+          <!-- Auto Pay Bar -->
+          <rect width="640" height="48" rx="12" fill="#111827" stroke="#1F2937" stroke-width="1" />
+          <text x="16" y="28" fill="#FBBF24" font-size="14">⚡</text>
+          <text x="38" y="22" fill="#FFFFFF" font-size="11" font-weight="800" class="font-sans">PAIEMENT AUTOMATIQUE</text>
+          <text x="38" y="36" fill="#9CA3AF" font-size="10" class="font-sans">Débit immédiat sur compte abonné — zéro saisie de carte</text>
+
+          <!-- Toggle ON Switch -->
+          <g transform="translate(580, 14)">
+            <rect width="42" height="22" rx="11" fill="#10B981" />
+            <circle cx="31" cy="11" r="8" fill="#FFFFFF" />
+          </g>
+
+          <!-- Bottom Action Area -->
+          <g transform="translate(0, 62)">
+            <text x="0" y="16" fill="#9CA3AF" font-size="10" font-weight="800" class="font-sans">TOTAL ESTIMÉ (5.5 HEURES)</text>
+            <text x="0" y="44" fill="#FFFFFF" font-size="28" font-weight="900" class="font-sans">CHF 16.50</text>
+            <text x="140" y="42" fill="#6EE7B7" font-size="11" class="font-sans">Sans frais cachés</text>
+
+            <!-- BIG 1-CLICK BUTTON -->
+            <g transform="translate(240, 2)">
+              <rect width="400" height="56" rx="16" fill="url(#bigBtnGrad)" />
+              <text x="48" y="34" fill="#FFFFFF" font-size="14" font-weight="900" class="font-sans" letter-spacing="0.05em">⚡ RÉSERVER &amp; PAYER EN 1 CLIC</text>
+              <text x="350" y="34" fill="#FFFFFF" font-size="16">→</text>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- Right Column: Live Pass Instant Confirmation (Width 360) -->
+      <g transform="translate(680, 0)">
+        <rect width="360" height="570" rx="16" fill="#0B0F19" stroke="#1F2937" stroke-width="1" />
+
+        <!-- Header -->
+        <g transform="translate(24, 28)">
+          <rect width="90" height="22" rx="11" fill="#065F46" />
+          <text x="12" y="15" fill="#34D399" font-size="9" font-weight="800" class="font-sans">⚡ REÇU INSTANTANÉ</text>
+          <text x="0" y="46" fill="#F9FAFB" font-size="18" font-weight="900" class="font-sans">Pass Stationnement</text>
+          <text x="0" y="64" fill="#9CA3AF" font-size="11" class="font-sans">Généré automatiquement dès le clic</text>
+        </g>
+
+        <!-- Digital Pass Card -->
+        <g transform="translate(24, 110)">
+          <rect width="312" height="340" rx="16" fill="#111827" stroke="#10B981" stroke-width="1.2" />
+
+          <!-- Pass Header -->
+          <g transform="translate(18, 20)">
+            <text x="0" y="14" fill="#6B7280" font-size="9" font-weight="800" class="font-sans">EMPLACEMENT</text>
+            <text x="0" y="36" fill="#34D399" font-size="20" font-weight="900" class="font-sans">Place A01</text>
+            <text x="0" y="52" fill="#E5E7EB" font-size="11" class="font-sans">Parking Gare Centrale</text>
+
+            <rect x="200" y="4" width="76" height="32" rx="8" fill="#1F2937" />
+            <text x="210" y="24" fill="#10B981" font-size="13" font-weight="900" class="font-mono">CHF 16.50</text>
+          </g>
+
+          <!-- Divider -->
+          <line x1="18" y1="84" x2="294" y2="84" stroke="#1F2937" stroke-dasharray="4 4" />
+
+          <!-- Metadata -->
+          <g transform="translate(18, 102)">
+            <text x="0" y="14" fill="#6B7280" font-size="9" font-weight="800" class="font-sans">DATE &amp; HORAIRE</text>
+            <text x="0" y="30" fill="#FFFFFF" font-size="12" font-weight="700" class="font-sans">Lundi 19 Octobre 2026</text>
+            <text x="0" y="46" fill="#818CF8" font-size="11" font-weight="700" class="font-mono">12:00 - 17:30 (Après-midi)</text>
+
+            <text x="0" y="74" fill="#6B7280" font-size="9" font-weight="800" class="font-sans">VÉHICULE ENREGISTRÉ</text>
+            <rect x="0" y="82" width="100" height="24" rx="6" fill="#1F2937" stroke="#374151" stroke-width="0.8" />
+            <text x="10" y="98" fill="#FFFFFF" font-size="11" font-weight="800" class="font-mono">VD 123 456</text>
+
+            <text x="130" y="74" fill="#6B7280" font-size="9" font-weight="800" class="font-sans">PAIEMENT</text>
+            <rect x="130" y="82" width="144" height="24" rx="6" fill="#065F46" />
+            <text x="140" y="98" fill="#34D399" font-size="10" font-weight="800" class="font-sans">✓ Débit auto validé</text>
+          </g>
+
+          <!-- QR Code Access Token -->
+          <g transform="translate(110, 228)">
+            <rect width="92" height="92" rx="8" fill="#FFFFFF" />
+            <!-- QR Pattern -->
+            <rect x="10" y="10" width="22" height="22" fill="#0B0F19" />
+            <rect x="14" y="14" width="14" height="14" fill="#FFFFFF" />
+            <rect x="18" y="18" width="6" height="6" fill="#0B0F19" />
+
+            <rect x="60" y="10" width="22" height="22" fill="#0B0F19" />
+            <rect x="64" y="14" width="14" height="14" fill="#FFFFFF" />
+            <rect x="68" y="18" width="6" height="6" fill="#0B0F19" />
+
+            <rect x="10" y="60" width="22" height="22" fill="#0B0F19" />
+            <rect x="14" y="64" width="14" height="14" fill="#FFFFFF" />
+            <rect x="18" y="68" width="6" height="6" fill="#0B0F19" />
+
+            <rect x="42" y="16" width="8" height="18" fill="#0B0F19" />
+            <rect x="42" y="46" width="16" height="8" fill="#0B0F19" />
+            <rect x="64" y="64" width="18" height="18" fill="#0B0F19" />
+          </g>
+        </g>
+
+        <!-- Action Button -->
+        <g transform="translate(24, 470)">
+          <rect width="312" height="42" rx="12" fill="#1F2937" stroke="#374151" stroke-width="1" />
+          <text x="96" y="26" fill="#38BDF8" font-size="12" font-weight="700" class="font-sans">🗺️ Ouvrir GPS / Waze</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

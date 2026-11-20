@@ -7,10 +7,11 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * Contrôleur d'onboarding simplifié.
- * 
+ *
  * L'utilisateur a deux choix :
  * 1. Choisir un site existant comme favori
  * 2. Créer un nouveau site et le définir comme favori
@@ -40,13 +41,20 @@ class OnboardingController extends Controller
         /** @var User $user */
         $user = $request->user();
 
+        $siteNomRules = ['required_if:action,create', 'nullable', 'string', 'max:255'];
+        if ($request->input('action') === 'create') {
+            $siteNomRules[] = Rule::unique('sites', 'nom')->where('user_id', $user->id);
+        }
+
         $validated = $request->validate([
             'action' => 'required|in:choose,create',
             // Pour le choix d'un site existant
             'site_id' => 'required_if:action,choose|nullable|exists:sites,id',
             // Pour la création d'un nouveau site
-            'site_nom' => 'required_if:action,create|nullable|string|max:255',
+            'site_nom' => $siteNomRules,
             'site_adresse' => 'required_if:action,create|nullable|string|max:255',
+        ], [
+            'site_nom.unique' => 'Vous avez déjà un site portant ce nom.',
         ]);
 
         if ($validated['action'] === 'choose') {
@@ -65,7 +73,7 @@ class OnboardingController extends Controller
             // Si l'utilisateur crée un site, il devient propriétaire
             if ($user->role === 'locataire') {
                 $user->role = 'les deux';
-            } elseif (!$user->role || $user->role === '') {
+            } elseif (! $user->role) {
                 $user->role = 'proprietaire';
             }
         }

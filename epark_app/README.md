@@ -67,6 +67,36 @@ Commandes usuelles (exemples) :
 - npm run dev
 - php artisan serve
 
+**Démarrage local (rapide)**
+
+Si vous êtes dans `epark_app`, lancez :
+
+```powershell
+composer install
+npm install
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve --host=127.0.0.1 --port=8000
+npm run dev
+```
+
+Remarque : ce dépôt ne contenait pas initialement le script `artisan` à la racine ; il a été restauré pour permettre `php artisan serve`.
+
+**Miniatures**
+
+Des miniatures (`-thumb.png` et `-thumb.webp`) ont été générées automatiquement dans `docs/screenshots/thumbs/` pour alléger l'affichage dans la documentation.
+
+**Tests et publication**
+
+Les dépendances de développement incluent PHPUnit. Après `composer install`, exécuter :
+
+```powershell
+php artisan test
+npm run build
+```
+
+Le parcours simplifié est `/express` : date, créneau et parking préremplis, disponibilité du créneau complet et montant total. L’inscription permet de choisir son parking plus tard. Les demandes restent en attente de confirmation du propriétaire ; les règlements sont manuels, sans débit en ligne. Voir [DEPLOY.md](DEPLOY.md) pour publier et [docs/UX-2026-10-24.md](docs/UX-2026-10-24.md) pour la revue.
+
 ## Structure fonctionnelle
 
 - Gestion des places : disponibilités, exceptions, plages horaires
@@ -77,6 +107,18 @@ Commandes usuelles (exemples) :
 
 - Le statut “Terminée” est calculé côté vue à partir de la date de fin.
 - Le site favori est utilisé pour pré‑sélectionner la réservation.
+
+## Captures d'écran
+
+Voici quelques captures d'écran de démonstration (SVG générés) :
+
+- Tableau de bord : ![Tableau de bord](docs/screenshots/01-dashboard.svg)
+- Formulaire de réservation : ![Formulaire](docs/screenshots/02-booking-form.svg)
+- Vue mobile : ![Vue mobile](docs/screenshots/03-mobile-view.svg)
+
+- Capture réelle : ![Capture live](docs/screenshots/04-live-capture.png)
+
+Remplacez ces images par vos captures réelles dans `epark_app/docs/screenshots/`.
 
 ## Licence
 

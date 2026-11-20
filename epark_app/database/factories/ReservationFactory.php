@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Reservation>
+ * @extends Factory<Reservation>
  */
 class ReservationFactory extends Factory
 {
@@ -17,7 +17,7 @@ class ReservationFactory extends Factory
 
     public function definition(): array
     {
-        $date = Carbon::tomorrow();
+        $date = Carbon::now()->addDays(3);
         $start = $date->copy()->setTime(8, 0);
         $end = $date->copy()->setTime(12, 0);
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Place;
+use App\Models\Reservation;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,6 +19,7 @@ class ProfileTest extends TestCase
         $user = User::factory()->create(['onboarded' => true]);
         $site = Site::factory()->create(['user_id' => $user->id]);
         $user->update(['favorite_site_id' => $site->id]);
+
         return $user;
     }
 
@@ -84,10 +86,80 @@ class ProfileTest extends TestCase
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/');
+            ->assertRedirect('/')
+            ->assertCookieExpired('epark_express_key');
 
         $this->assertGuest();
         $this->assertNull($user->fresh());
+    }
+
+    public function test_user_cannot_delete_account_with_active_tenant_reservation(): void
+    {
+        $owner = $this->onboardedUser();
+        $tenant = $this->onboardedUser();
+        $place = Place::factory()->create([
+            'user_id' => $owner->id,
+            'site_id' => $owner->favorite_site_id,
+        ]);
+        Reservation::factory()->create([
+            'user_id' => $tenant->id,
+            'place_id' => $place->id,
+            'statut' => 'en_attente',
+            'date_debut' => now()->addDay()->setTime(8, 0),
+            'date_fin' => now()->addDay()->setTime(12, 0),
+        ]);
+
+        $response = $this->actingAs($tenant)->delete('/profile', [
+            'password' => 'password',
+        ]);
+
+        $response
+            ->assertSessionHasErrorsIn('userDeletion', 'account')
+            ->assertRedirect('/profile');
+        $this->assertNotNull($tenant->fresh());
+    }
+
+    public function test_owner_cannot_delete_account_with_active_reservation_on_owned_place(): void
+    {
+        $owner = $this->onboardedUser();
+        $tenant = $this->onboardedUser();
+        $place = Place::factory()->create([
+            'user_id' => $owner->id,
+            'site_id' => $owner->favorite_site_id,
+        ]);
+        Reservation::factory()->create([
+            'user_id' => $tenant->id,
+            'place_id' => $place->id,
+            'statut' => 'confirmée',
+            'date_debut' => now()->addDay()->setTime(8, 0),
+            'date_fin' => now()->addDay()->setTime(12, 0),
+        ]);
+
+        $response = $this->actingAs($owner)->delete('/profile', [
+            'password' => 'password',
+        ]);
+
+        $response
+            ->assertSessionHasErrorsIn('userDeletion', 'account')
+            ->assertRedirect('/profile');
+        $this->assertNotNull($owner->fresh());
+    }
+
+    public function test_secret_group_attempts_are_rate_limited(): void
+    {
+        $member = $this->onboardedUser();
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->actingAs($member)->post('/profile/secret-groups', [
+                'secret_group_name' => 'Inconnu',
+                'secret_group_code' => 'code'.$i,
+            ])->assertRedirect('/profile');
+        }
+
+        $this->actingAs($member)->post('/profile/secret-groups', [
+            'secret_group_name' => 'Inconnu',
+            'secret_group_code' => 'code11',
+        ])->assertStatus(429);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

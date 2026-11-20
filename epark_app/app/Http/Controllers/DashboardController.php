@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -23,14 +24,14 @@ class DashboardController extends Controller
             $nbPlaces = $user->places()->count();
 
             $nbReservationsAttente = $isOwner
-                ? Reservation::whereHas('place', fn($q) => $q->where('user_id', $user->id))
+                ? Reservation::whereHas('place', fn ($q) => $q->where('user_id', $user->id))
                     ->where('statut', 'en_attente')
                     ->count()
                 : $user->reservations()->where('statut', 'en_attente')->count();
 
             $revenusMois = 0;
             if ($isOwner) {
-                $revenusMois = Reservation::whereHas('place', fn($q) => $q->where('user_id', $user->id))
+                $revenusMois = Reservation::whereHas('place', fn ($q) => $q->where('user_id', $user->id))
                     ->where('statut', 'confirmée')
                     ->whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year)
@@ -42,17 +43,25 @@ class DashboardController extends Controller
 
         // Réservations récentes avec eager loading optimisé
         $reservations = $this->getRecentReservations($user);
+        $pendingRequests = $isOwner
+            ? Reservation::with(['user', 'place.site'])->forOwner($user->id)->pending()
+                ->where('date_fin', '>=', now())->orderBy('date_debut')->limit(10)->get()
+            : collect();
 
         return view('dashboard', [
             ...$stats,
             'reservations' => $reservations,
+            'pendingRequests' => $pendingRequests,
+            'isOwner' => $isOwner,
         ]);
     }
 
     /**
      * Récupère les réservations récentes selon le rôle.
+     *
+     * @return Collection<int, Reservation>
      */
-    private function getRecentReservations(User $user)
+    private function getRecentReservations(User $user): Collection
     {
         $query = Reservation::with(['user:id,name,email', 'place:id,nom,site_id', 'place.site:id,nom,adresse'])
             ->orderByDesc('created_at')
@@ -66,7 +75,7 @@ class DashboardController extends Controller
         if (in_array($user->role, ['proprietaire', 'les deux'], true)) {
             return $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                    ->orWhereHas('place', fn($q) => $q->where('user_id', $user->id));
+                    ->orWhereHas('place', fn ($q) => $q->where('user_id', $user->id));
             })->get();
         }
 

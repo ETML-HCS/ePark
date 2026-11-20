@@ -9,7 +9,9 @@
      x-transition:leave="transition ease-in duration-200"
      x-transition:leave-start="opacity-100"
      x-transition:leave-end="opacity-0"
-     class="fixed top-4 right-4 z-50 max-w-md">
+     class="fixed top-4 right-4 z-50 max-w-md"
+     role="status"
+     aria-live="polite">
     <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
         <div class="flex items-center p-4">
             <div class="flex-shrink-0">
@@ -23,7 +25,7 @@
                 <p class="text-sm font-bold text-gray-900">Succès</p>
                 <p class="text-sm text-gray-600 mt-1">{{ $message }}</p>
             </div>
-            <button @click="show = false" class="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+            <button type="button" @click="show = false" aria-label="Fermer la notification" class="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>

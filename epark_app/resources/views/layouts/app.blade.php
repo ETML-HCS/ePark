@@ -5,26 +5,51 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <meta name="description" content="ePark - Reservation de places de parking, gestion des disponibilites et paiements securises.">
-        <meta name="robots" content="index,follow">
+        <meta name="description" content="ePark : réservation de places de parking et gestion des disponibilités.">
+        <meta name="robots" content="{{ auth()->check() ? 'noindex,nofollow' : 'index,follow' }}">
+        <meta name="referrer" content="no-referrer">
         <link rel="canonical" href="{{ url()->current() }}">
 
-        <title>{{ config('app.name', 'ePark') }} - {{ isset($title) ? $title : 'Tableau de bord' }}</title>
+        @php
+            $pageTitle = match (true) {
+                request()->routeIs('express.*', 'reservations.create') => 'Réserver une place',
+                request()->routeIs('reservations.*') => 'Mes réservations',
+                request()->routeIs('dashboard') => 'Mon activité',
+                request()->routeIs('places.*') => 'Mes places',
+                request()->routeIs('sites.*') => 'Mes sites',
+                request()->routeIs('notifications.*') => 'Notifications',
+                request()->routeIs('profile.*') => 'Mon profil',
+                request()->routeIs('admin.*') => 'Administration',
+                request()->routeIs('legal.*') => 'Mentions légales',
+                default => 'Parking',
+            };
+        @endphp
+        <title>ePark · {{ $pageTitle }}</title>
 
         <meta property="og:type" content="website">
         <meta property="og:site_name" content="ePark">
         <meta property="og:title" content="{{ config('app.name', 'ePark') }}">
-        <meta property="og:description" content="ePark - Reservation de places de parking, gestion des disponibilites et paiements securises.">
+        <meta property="og:description" content="Réservez une place de parking et retrouvez vos réservations avec ePark.">
         <meta property="og:url" content="{{ url()->current() }}">
         <meta property="og:image" content="{{ asset('logo/ePark.png') }}">
 
         <meta name="twitter:card" content="summary">
         <meta name="twitter:title" content="{{ config('app.name', 'ePark') }}">
-        <meta name="twitter:description" content="ePark - Reservation de places de parking, gestion des disponibilites et paiements securises.">
+        <meta name="twitter:description" content="Réservez une place de parking et retrouvez vos réservations avec ePark.">
         <meta name="twitter:image" content="{{ asset('logo/ePark.png') }}">
 
-        <!-- Favicon -->
-        <link rel="icon" type="image/png" href="{{ asset('logo/ePark.png') }}" />
+        <!-- Favicon & PWA Mobile App Support -->
+        <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+        <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#4f46e5">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="ePark Express">
 
         <!-- Police Figtree (Moderne & Rond) -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -34,7 +59,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     
-    <body class="font-sans antialiased text-gray-900 bg-gray-50 flex flex-col min-h-screen transition-colors duration-200">
+    <body class="font-sans antialiased text-[#18263a] bg-[#f3f6fa] flex flex-col min-h-screen transition-colors duration-200">
         
         @include('layouts.navigation')
 
@@ -42,13 +67,18 @@
         @if(session('success'))
             <x-success-toast :message="session('success')" />
         @endif
+        @if(session('info'))
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full" data-dismiss="alert" role="status">
+                <div class="booking-info">{{ session('info') }}</div>
+            </div>
+        @endif
 
         @if(isset($header) && trim((string) $header) !== '')
             <header class="bg-white border-b border-gray-200 shadow-sm transition-colors duration-200">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+                    <div class="text-2xl font-bold text-gray-900 leading-tight">
                         {{ $header }}
-                    </h1>
+                    </div>
                 </div>
             </header>
         @endif

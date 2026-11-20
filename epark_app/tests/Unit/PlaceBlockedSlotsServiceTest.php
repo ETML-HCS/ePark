@@ -21,7 +21,7 @@ class PlaceBlockedSlotsServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new PlaceBlockedSlotsService();
+        $this->service = new PlaceBlockedSlotsService;
     }
 
     private function createActivePlace(?int $userId = null): Place

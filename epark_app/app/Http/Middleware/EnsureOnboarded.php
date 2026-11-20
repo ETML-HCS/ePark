@@ -2,13 +2,14 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Middleware simplifié pour l'onboarding.
- * 
+ *
  * L'onboarding consiste uniquement à choisir un site favori.
  * Tous les utilisateurs passent par l'onboarding à leur première connexion.
  */
@@ -16,10 +17,10 @@ class EnsureOnboarded
 {
     public function handle(Request $request, Closure $next): Response
     {
-        /** @var \App\Models\User|null $user */
+        /** @var User|null $user */
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
@@ -34,6 +35,7 @@ class EnsureOnboarded
             if ($request->routeIs('onboarding.*')) {
                 return redirect()->route('dashboard');
             }
+
             return $next($request);
         }
 
@@ -47,6 +49,7 @@ class EnsureOnboarded
             if ($request->routeIs('onboarding.*')) {
                 return redirect()->route('dashboard');
             }
+
             return $next($request);
         }
 

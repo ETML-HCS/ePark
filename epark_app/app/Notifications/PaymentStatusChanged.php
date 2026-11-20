@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Reservation;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -28,12 +29,12 @@ class PaymentStatusChanged extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $notifiable;
 
         $label = match ($this->status) {
@@ -60,8 +61,11 @@ class PaymentStatusChanged extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'type' => 'payment_status_changed',
             'reservation_id' => $this->reservation->id,
             'status' => $this->status,
+            'place_name' => optional($this->reservation->place)->nom,
+            'url' => '/reservations/'.$this->reservation->id,
         ];
     }
 }

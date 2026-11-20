@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Place;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -33,7 +35,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($initialSites as $siteData) {
-            \App\Models\Site::updateOrCreate(
+            Site::updateOrCreate(
                 ['nom' => $siteData['nom']],
                 [
                     'adresse' => $siteData['adresse'],
@@ -50,7 +52,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $site = \App\Models\Site::updateOrCreate(
+        $site = Site::updateOrCreate(
             ['nom' => 'Parking Test'],
             [
                 'adresse' => '1 rue de la Paix, Paris',
@@ -59,7 +61,7 @@ class DatabaseSeeder extends Seeder
         );
 
         // Créer une place liée à ce user
-        \App\Models\Place::updateOrCreate(
+        Place::updateOrCreate(
             ['site_id' => $site->id, 'nom' => 'A-1'],
             [
                 'user_id' => $user->id,

@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('places', function (Blueprint $table) {
-            if (!Schema::hasColumn('places', 'cancel_deadline_hours')) {
+            if (! Schema::hasColumn('places', 'cancel_deadline_hours')) {
                 $table->unsignedTinyInteger('cancel_deadline_hours')->default(12)->after('is_active');
             }
-            if (!Schema::hasColumn('places', 'deleted_at')) {
+            if (! Schema::hasColumn('places', 'deleted_at')) {
                 $table->softDeletes();
             }
         });

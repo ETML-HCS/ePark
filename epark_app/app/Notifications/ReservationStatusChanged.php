@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Reservation;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -22,7 +23,7 @@ class ReservationStatusChanged extends Notification
     {
         $this->reservation = $reservation;
         $this->statut = $statut;
-     }
+    }
 
     /**
      * Get the notification's delivery channels.
@@ -31,7 +32,7 @@ class ReservationStatusChanged extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     /**
@@ -39,7 +40,7 @@ class ReservationStatusChanged extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $notifiable;
 
         return (new MailMessage)
@@ -47,7 +48,7 @@ class ReservationStatusChanged extends Notification
             ->greeting('Bonjour '.$user->name)
             ->line('Le statut de votre réservation pour la place "'.(optional($this->reservation->place)->nom ?? '').'" a été modifié.')
             ->line('Nouveau statut : '.$this->statut)
-            ->action('Voir mes réservations', url('/reservations'))
+            ->action('Voir mes réservations', url('/reservations/'.$this->reservation->id))
             ->line('Merci d’utiliser ePark !');
     }
 
@@ -59,7 +60,12 @@ class ReservationStatusChanged extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'type' => 'reservation_status_changed',
+            'reservation_id' => $this->reservation->id,
+            'statut' => $this->statut,
+            'place_name' => optional($this->reservation->place)->nom,
+            'owner_message' => $this->reservation->owner_message,
+            'url' => '/reservations/'.$this->reservation->id,
         ];
     }
 }

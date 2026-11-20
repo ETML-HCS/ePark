@@ -71,4 +71,25 @@ class OnboardingControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/dashboard');
         $response->assertRedirect(route('onboarding.index'));
     }
+
+    public function test_onboarding_rejects_duplicate_site_name_for_same_user(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'locataire',
+            'onboarded' => false,
+            'favorite_site_id' => null,
+        ]);
+        Site::factory()->create([
+            'user_id' => $user->id,
+            'nom' => 'Site Existant',
+        ]);
+
+        $response = $this->actingAs($user)->post('/onboarding', [
+            'action' => 'create',
+            'site_nom' => 'Site Existant',
+            'site_adresse' => 'Rue 1',
+        ]);
+
+        $response->assertSessionHasErrors('site_nom');
+    }
 }

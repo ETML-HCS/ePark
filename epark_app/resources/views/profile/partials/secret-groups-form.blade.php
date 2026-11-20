@@ -12,73 +12,73 @@
         };
     @endphp
 
-    <form method="post" action="{{ route('profile.secret-groups.store') }}" class="space-y-5">
+    <form method="post" action="{{ route('profile.secret-groups.store') }}" class="space-y-4">
         @csrf
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label for="secret_group_name" class="text-sm font-bold text-gray-900 mb-2 block">Nom du groupe</label>
+                <label for="secret_group_name" class="block text-sm font-semibold mb-1.5">Nom du groupe</label>
                 <input
                     id="secret_group_name"
                     name="secret_group_name"
                     type="text"
                     value="{{ old('secret_group_name') }}"
-                    placeholder="Ex: ETML/CFPV"
-                    class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
+                    placeholder="Ex. : ETML/CFPV"
+                    class="ep-input"
+                    required>
             </div>
             <div>
-                <label for="secret_group_code" class="text-sm font-bold text-gray-900 mb-2 block">Code du groupe</label>
+                <label for="secret_group_code" class="block text-sm font-semibold mb-1.5">Code du groupe</label>
                 <input
                     id="secret_group_code"
                     name="secret_group_code"
                     type="text"
                     value="{{ old('secret_group_code') }}"
-                    placeholder="Ex: etml3865"
-                    class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
+                    placeholder="Ex. : etml3865"
+                    autocomplete="off"
+                    class="ep-input"
+                    required>
             </div>
         </div>
 
         @if($errors->secretGroup->get('secret_group_name') || $errors->secretGroup->get('secret_group_code'))
-            <p class="text-sm text-red-600">{{ $errors->secretGroup->first('secret_group_name') ?: $errors->secretGroup->first('secret_group_code') }}</p>
+            <p class="booking-error !m-0" role="alert">
+                {{ $errors->secretGroup->first('secret_group_name') ?: $errors->secretGroup->first('secret_group_code') }}
+            </p>
         @endif
 
         @if (session('status') === 'secret-group-added')
-            <p class="text-sm text-green-700 font-medium">Groupe validé et ajouté avec succès.</p>
+            <p class="text-sm font-semibold text-[#166534]" role="status">Groupe validé et ajouté avec succès.</p>
         @elseif (session('status') === 'secret-group-exists')
-            <p class="text-sm text-amber-700 font-medium">Ce groupe est déjà présent dans votre liste.</p>
+            <p class="text-sm font-semibold text-amber-800" role="status">Ce groupe est déjà présent dans votre liste.</p>
         @elseif (session('status') === 'secret-group-removed')
-            <p class="text-sm text-green-700 font-medium">Groupe retiré de votre liste.</p>
+            <p class="text-sm font-semibold text-[#166534]" role="status">Groupe retiré de votre liste.</p>
         @endif
 
-        <div class="flex items-center gap-3">
-            <button type="submit" class="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Ajouter
-            </button>
-            <span class="text-xs text-gray-500">Vérification immédiate du couple nom + code</span>
+        <div class="flex flex-wrap items-center gap-3">
+            <button type="submit" class="booking-primary">Ajouter le groupe</button>
+            <span class="text-xs text-slate-500">Vérification immédiate du nom et du code</span>
         </div>
     </form>
 
-    <div class="mt-6 border-t border-gray-100 pt-4">
-        <h4 class="text-sm font-black text-gray-900 uppercase tracking-wide mb-3">Liste des groupes secrets</h4>
+    <div class="mt-6 pt-6 border-t border-[#dce3ed]">
+        <h3 class="text-sm font-bold mb-3">Mes groupes enregistrés</h3>
 
         @if(empty($savedGroups))
-            <p class="text-sm text-gray-500">Aucun groupe secret ajouté pour le moment.</p>
+            <p class="text-sm text-slate-600">Aucun groupe privé enregistré pour le moment.</p>
         @else
-            <div class="space-y-2">
+            <div class="space-y-2.5">
                 @foreach($savedGroups as $entry)
-                    <div class="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                    <div class="flex items-center justify-between gap-3 rounded-xl border border-[#dce3ed] bg-[#f8fafc] px-4 py-3">
                         <div class="min-w-0">
-                            <p class="text-sm font-semibold text-gray-900 truncate">{{ $entry['name'] !== '' ? $entry['name'] : 'Groupe sans nom' }}</p>
-                            <p class="text-xs text-gray-500">Code: {{ $maskedCode($entry['code']) }}</p>
+                            <p class="text-sm font-semibold truncate">{{ $entry['name'] !== '' ? $entry['name'] : 'Groupe sans nom' }}</p>
+                            <p class="text-xs text-slate-500">Code : {{ $maskedCode($entry['code']) }}</p>
                         </div>
-                        <form method="post" action="{{ route('profile.secret-groups.destroy') }}" onsubmit="return confirm('Retirer ce groupe secret ?');">
+                        <form method="post" action="{{ route('profile.secret-groups.destroy') }}" onsubmit="return confirm('Retirer ce groupe privé ?');">
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="secret_group_code_remove" value="{{ $entry['code'] }}">
-                            <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-all">
+                            <button type="submit" class="booking-secondary !min-h-[36px] !py-1.5 !px-3 !text-xs !text-rose-700 hover:!bg-rose-50">
                                 Retirer
                             </button>
                         </form>

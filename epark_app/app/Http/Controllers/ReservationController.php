@@ -7,10 +7,16 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Services\PlaceBlockedSlotsService;
 use App\Services\ReservationService;
+use App\Support\BookingPeriod;
+use App\Support\CsvExporter;
+use App\Support\ReservationIcsGenerator;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Contrôleur de réservations refactorisé.
@@ -28,52 +34,103 @@ class ReservationController extends Controller
      */
     public function index(Request $request): View
     {
+        [$query, $period] = $this->buildFilteredQuery($request);
+
+        $reservations = $query
+            ->orderBy($period === 'upcoming' ? 'date_debut' : 'created_at', $period === 'upcoming' ? 'asc' : 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('reservations.index', compact('reservations'));
+    }
+
+    /**
+     * Exporte la liste filtrée des réservations de l'utilisateur en CSV.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        [$query, $period] = $this->buildFilteredQuery($request);
+
+        $reservations = $query
+            ->orderBy($period === 'upcoming' ? 'date_debut' : 'created_at', $period === 'upcoming' ? 'asc' : 'desc')
+            ->get();
+
+        $rows = [];
+        foreach ($reservations as $reservation) {
+            /** @var Reservation $reservation */
+            $place = $reservation->place;
+            $site = $place?->site;
+            $tenant = $reservation->user;
+            $rows[] = [
+                $reservation->id,
+                $reservation->date_debut->format('d.m.Y H:i'),
+                $reservation->date_fin->format('d.m.Y H:i'),
+                $site !== null ? $site->nom : '',
+                $place !== null ? $place->nom : 'Place archivée',
+                $tenant !== null ? $tenant->name : '',
+                $reservation->vehicle_plate ?? '',
+                $reservation->statut,
+                $reservation->payment_status,
+                $reservation->payment_received_at ? 'Oui' : 'Non',
+                number_format(($reservation->amount_cents ?? 0) / 100, 2, '.', ''),
+                number_format(($reservation->penalty_cents ?? 0) / 100, 2, '.', ''),
+            ];
+        }
+
+        return CsvExporter::download(
+            'epark-reservations-'.now()->format('Y-m-d').'.csv',
+            ['ID', 'Début', 'Fin', 'Site', 'Place', 'Locataire', 'Plaque', 'Statut', 'Paiement', 'Réception confirmée', 'Montant (CHF)', 'Pénalité (CHF)'],
+            $rows
+        );
+    }
+
+    /**
+     * @return array{0: Builder<Reservation>, 1: string}
+     */
+    private function buildFilteredQuery(Request $request): array
+    {
+        $request->validate([
+            'period' => 'nullable|in:upcoming,past,all',
+            'status' => 'nullable|in:en_attente,confirmée,annulée,terminee',
+            'payment' => 'nullable|in:pending,paid,refunded,failed',
+        ]);
         /** @var User $user */
         $user = $request->user();
 
         $query = Reservation::with(['user', 'place.site']);
 
-        // Les admins voient toutes les réservations
         if ($user->role !== 'admin') {
             $query->where(function ($q) use ($user) {
-                // Réservations créées par l'utilisateur
                 $q->where('user_id', $user->id)
-                    // Ou réservations sur les places de l'utilisateur
-                    ->orWhereHas('place', fn($q) => $q->where('user_id', $user->id));
+                    ->orWhereHas('place', fn ($q) => $q->where('user_id', $user->id));
             });
         }
 
-        $period = $request->get('period', 'upcoming');
-        $status = $request->get('status', '');
-        $payment = $request->get('payment', '');
-        $today = now()->startOfDay();
+        $period = (string) $request->get('period', in_array($request->get('status'), ['annulée', 'terminee'], true) ? 'all' : 'upcoming');
+        $status = (string) $request->get('status', '');
+        $payment = (string) $request->get('payment', '');
 
         if ($period === 'past') {
-            $query->whereDate('date_fin', '<', $today);
-        } elseif ($period === 'all') {
-            // Pas de filtre
-        } else {
-            // Par défaut : réservations à venir (y compris aujourd'hui)
-            $query->whereDate('date_fin', '>=', $today)
+            $query->where('date_fin', '<', now());
+        } elseif ($period !== 'all') {
+            $query->where('date_fin', '>=', now())
                 ->where('statut', '!=', 'annulée');
         }
 
-        if (!empty($status)) {
+        if ($status !== '') {
             if ($status === 'terminee') {
                 $query->where('statut', 'confirmée')
-                    ->whereDate('date_fin', '<', $today);
+                    ->where('date_fin', '<', now());
             } else {
                 $query->where('statut', $status);
             }
         }
 
-        if (!empty($payment)) {
+        if ($payment !== '') {
             $query->where('payment_status', $payment);
         }
 
-        $reservations = $query->orderByDesc('created_at')->get();
-
-        return view('reservations.index', compact('reservations'));
+        return [$query, $period];
     }
 
     /**
@@ -82,10 +139,12 @@ class ReservationController extends Controller
      */
     public function create(Request $request): View
     {
+        $request->validate(['date' => 'nullable|date_format:Y-m-d']);
         /** @var User $user */
         $user = $request->user();
 
         $today = now()->startOfDay();
+        $tomorrow = now()->addDay()->startOfDay();
         $maxDate = now()->addWeeks(3)->endOfDay();
 
         if ($request->has('date')) {
@@ -97,7 +156,7 @@ class ReservationController extends Controller
                 $selectedDate = $maxDate->copy()->startOfDay();
             }
         } else {
-            $selectedDate = $today->copy();
+            $selectedDate = now()->hour >= 18 ? $tomorrow->copy() : $today->copy();
         }
 
         $savedGroupEntries = $user->secretGroupEntries();
@@ -110,12 +169,16 @@ class ReservationController extends Controller
             ->values()
             ->all();
 
-        $result = $this->availabilityService->getAvailablePlacesForDate($selectedDate, $user->id, $effectiveGroupCodes, $user->email);
+        $result = $this->availabilityService->getAvailablePlacesForDate($selectedDate, $user->id, $effectiveGroupCodes, $user->verifiedEmail());
         $places = $result['places']
             ->where('user_id', '!=', $user->id)
             ->values();
+        $placeIds = $places->pluck('id')->all();
         $placeHours = collect($result['placeHours'])
-            ->only($places->pluck('id')->all())
+            ->only($placeIds)
+            ->toArray();
+        $placeSegments = collect($result['placeSegments'])
+            ->only($placeIds)
             ->toArray();
 
         $sites = $places->pluck('site')->filter()->unique('id')->values();
@@ -124,20 +187,22 @@ class ReservationController extends Controller
         $selectedSiteId = $request->get('site_id') ?? $user->favorite_site_id;
         $selectedPlaceId = $request->get('place_id');
 
-        if ($selectedPlaceId && !$places->contains('id', (int) $selectedPlaceId)) {
+        if ($selectedPlaceId && ! $places->contains('id', (int) $selectedPlaceId)) {
             $selectedPlaceId = null;
         }
 
         // Si un site est pré-sélectionné mais pas de place, sélectionner la première place disponible
-        if ($selectedSiteId && !$selectedPlaceId) {
-            $firstPlace = $places->first(fn($p) => $p->site_id == $selectedSiteId);
+        if ($selectedSiteId && ! $selectedPlaceId) {
+            $firstPlace = $places->first(fn ($p) => $p->site_id == $selectedSiteId);
             $selectedPlaceId = $firstPlace?->id;
         }
 
         return view('reservations.create', [
             'places' => $places,
-            'hours' => array_map(fn($h) => sprintf('%02d:00', $h), range(0, 23)),
+            'hours' => array_map(fn ($h) => sprintf('%02d:00', $h), range(0, 23)),
             'placeHours' => $placeHours,
+            'placeSegments' => $placeSegments,
+            'segments' => BookingPeriod::SEGMENTS,
             'minDate' => $today->toDateString(),
             'maxDate' => $maxDate->toDateString(),
             'selectedDate' => $selectedDate->toDateString(),
@@ -158,9 +223,10 @@ class ReservationController extends Controller
 
         $validated = $request->validate([
             'place_id' => 'required|exists:places,id',
-            'date' => ['required', 'date', 'after_or_equal:' . $minDate->toDateString(), 'before_or_equal:' . $maxDate->toDateString()],
-            'segment' => 'required|in:matin_travail,aprem_travail,soir,nuit',
+            'date' => ['required', 'date', 'after_or_equal:'.$minDate->toDateString(), 'before_or_equal:'.$maxDate->toDateString()],
+            'segment' => BookingPeriod::validationRule(),
             'battement' => 'nullable|integer|in:5',
+            'vehicle_plate' => 'nullable|string|max:20',
         ]);
 
         /** @var User $user */
@@ -181,10 +247,21 @@ class ReservationController extends Controller
             ->values()
             ->all();
 
-        if (!$place->isVisibleWithAnyGroupCodes($effectiveGroupCodes, $user->email)) {
+        if (! $place->isVisibleWithAnyGroupCodes($effectiveGroupCodes, $user->verifiedEmail())) {
             return back()->withInput()->withErrors([
                 'place_id' => 'Cette place est réservée à un groupe privé. Code groupe invalide.',
             ]);
+        }
+
+        // No payment provider is configured: never allow self-declaring payment on booking creation.
+        $isFree = ($place->hourly_price_cents ?? 0) === 0;
+        $plate = trim((string) ($validated['vehicle_plate'] ?? ''));
+        if ($plate !== '') {
+            $normalizedPlate = mb_strtoupper($plate);
+            if ($user->quick_vehicle_plate !== $normalizedPlate) {
+                $user->quick_vehicle_plate = $normalizedPlate;
+                $user->save();
+            }
         }
 
         try {
@@ -194,7 +271,10 @@ class ReservationController extends Controller
                 date: $selectedDate,
                 segment: $validated['segment'],
                 battement: (int) ($validated['battement'] ?? 5),
-                paid: $request->boolean('paiement_effectue')
+                paid: $isFree,
+                autoConfirm: false,
+                paymentProvider: $isFree ? 'free' : 'manual',
+                vehiclePlate: $plate !== '' ? $plate : null
             );
 
             return redirect()->route('reservations.index')
@@ -212,9 +292,24 @@ class ReservationController extends Controller
     {
         $this->authorize('view', $reservation);
 
-        $reservation->load(['user', 'place.site']);
+        $reservation->load(['user', 'place.site', 'place.user', 'feedback']);
 
         return view('reservations.show', compact('reservation'));
+    }
+
+    /**
+     * Télécharge l'événement de réservation au format iCalendar (.ics).
+     */
+    public function downloadIcs(Request $request, Reservation $reservation): Response
+    {
+        $this->authorize('view', $reservation);
+
+        $ics = ReservationIcsGenerator::generate($reservation);
+
+        return response($ics, 200, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="epark-reservation-'.$reservation->id.'.ics"',
+        ]);
     }
 
     /**
@@ -237,13 +332,7 @@ class ReservationController extends Controller
             $selectedDate = $maxDate->copy()->startOfDay();
         }
 
-        $startMinutes = ((int) $reservation->date_debut->format('H')) * 60 + (int) $reservation->date_debut->format('i');
-        $segment = match (true) {
-            $startMinutes >= 480 && $startMinutes < 720 => 'matin_travail',
-            $startMinutes >= 720 && $startMinutes < 1050 => 'aprem_travail',
-            $startMinutes >= 1080 && $startMinutes < 1440 => 'soir',
-            default => 'nuit',
-        };
+        $segment = BookingPeriod::detectSegment($reservation->date_debut, $reservation->date_fin);
 
         return view('reservations.edit', [
             'reservation' => $reservation,
@@ -252,6 +341,7 @@ class ReservationController extends Controller
             'maxDate' => $maxDate->toDateString(),
             'selectedDate' => $selectedDate->toDateString(),
             'selectedSegment' => $segment,
+            'segments' => BookingPeriod::SEGMENTS,
         ]);
     }
 
@@ -266,8 +356,8 @@ class ReservationController extends Controller
         $maxDate = now()->addWeeks(3)->endOfDay();
 
         $validated = $request->validate([
-            'date' => ['required', 'date', 'after_or_equal:' . $minDate->toDateString(), 'before_or_equal:' . $maxDate->toDateString()],
-            'segment' => 'required|in:matin_travail,aprem_travail,soir,nuit',
+            'date' => ['required', 'date', 'after_or_equal:'.$minDate->toDateString(), 'before_or_equal:'.$maxDate->toDateString()],
+            'segment' => BookingPeriod::validationRule(),
         ]);
 
         $selectedDate = Carbon::parse($validated['date'])->startOfDay();
@@ -299,9 +389,13 @@ class ReservationController extends Controller
             return back()->with('success', 'Paiement déjà effectué.');
         }
 
-        $this->reservationService->processPayment($reservation);
+        try {
+            $this->reservationService->processPayment($reservation);
+        } catch (\InvalidArgumentException $exception) {
+            return back()->withErrors(['payment_status' => $exception->getMessage()]);
+        }
 
-        return back()->with('success', 'Paiement effectué. En attente de confirmation propriétaire.');
+        return back()->with('success', 'Paiement manuel déclaré. En attente de confirmation du propriétaire.');
     }
 
     /**
@@ -322,6 +416,7 @@ class ReservationController extends Controller
                 $reservation,
                 $validated['owner_message'] ?? null
             );
+
             return redirect()->route('dashboard')->with('success', 'Réservation confirmée.');
         } catch (\InvalidArgumentException $e) {
             return back()->withErrors(['payment_status' => $e->getMessage()]);
@@ -347,6 +442,49 @@ class ReservationController extends Controller
         );
 
         return redirect()->route('dashboard')->with('success', 'Réservation refusée.');
+    }
+
+    /**
+     * Confirme la réception effective du règlement par le propriétaire.
+     */
+    public function confirmPaymentReceived(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $this->authorize('validate', $reservation);
+
+        $reservation->load(['user', 'payment', 'place.site']);
+
+        try {
+            $this->reservationService->confirmPaymentReceived($reservation);
+        } catch (\InvalidArgumentException $exception) {
+            return back()->withErrors(['payment_status' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', 'Réception du règlement confirmée.');
+    }
+
+    /**
+     * Enregistre une fin réelle tardive (dépassement) par le propriétaire.
+     */
+    public function registerOverstay(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $this->authorize('validate', $reservation);
+
+        if ($reservation->statut !== 'confirmée' || $reservation->date_debut->isFuture()) {
+            return back()->withErrors([
+                'actual_end_at' => 'Un dépassement ne peut être enregistré que sur une réservation confirmée déjà entamée.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'actual_end_at' => ['required', 'date', 'after:'.$reservation->date_fin->toDateTimeString()],
+        ], [
+            'actual_end_at.after' => 'L’heure de départ constatée doit être postérieure à la fin prévue.',
+        ]);
+
+        $actualEnd = Carbon::parse($validated['actual_end_at']);
+        $this->reservationService->registerActualEnd($reservation, $actualEnd);
+
+        return back()->with('success', 'Départ tardif enregistré et pénalité recalculée.');
     }
 
     /**

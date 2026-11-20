@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Interdire l'accès direct aux fichiers sensibles
+    RewriteRule ^(\.env|\.git|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml) - [F,L,NC]
+    RewriteRule ^(database|storage/logs|tests|bootstrap/cache) - [F,L,NC]
+
+    # Rediriger tout le trafic vers /public/ si le DocumentRoot pointe sur la racine du projet
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Bloquer la liste des répertoires
+Options -Indexes

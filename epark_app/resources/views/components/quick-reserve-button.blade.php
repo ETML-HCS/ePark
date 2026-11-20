@@ -1,7 +1,7 @@
 @props(['place', 'date' => null])
 
 @php
-    $reservationUrl = route('reservations.create', [
+    $reservationUrl = route('express.index', [
         'place_id' => $place->id,
         'site_id' => $place->site_id,
         'date' => $date ?? now()->toDateString(),

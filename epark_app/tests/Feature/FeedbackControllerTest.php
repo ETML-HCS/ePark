@@ -16,6 +16,7 @@ class FeedbackControllerTest extends TestCase
     use RefreshDatabase;
 
     private User $tenant;
+
     private Reservation $reservation;
 
     protected function setUp(): void
@@ -44,6 +45,7 @@ class FeedbackControllerTest extends TestCase
         $response = $this->actingAs($this->tenant)
             ->get("/reservations/{$this->reservation->id}/feedback");
         $response->assertStatus(200);
+        $response->assertSee($this->reservation->place->nom);
     }
 
     public function test_tenant_can_submit_feedback(): void
@@ -79,5 +81,21 @@ class FeedbackControllerTest extends TestCase
         ]);
 
         $response->assertRedirect('/login');
+    }
+
+    public function test_revisiting_feedback_form_after_submission_redirects_cleanly(): void
+    {
+        Feedback::create([
+            'reservation_id' => $this->reservation->id,
+            'user_id' => $this->tenant->id,
+            'rating' => 5,
+            'comment' => 'Déjà noté',
+        ]);
+
+        $response = $this->actingAs($this->tenant)
+            ->get("/reservations/{$this->reservation->id}/feedback");
+
+        $response->assertRedirect(route('reservations.show', $this->reservation));
+        $response->assertSessionHas('info');
     }
 }

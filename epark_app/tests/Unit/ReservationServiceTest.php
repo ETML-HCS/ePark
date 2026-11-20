@@ -2,7 +2,6 @@
 
 namespace Tests\Unit;
 
-use App\Models\Payment;
 use App\Models\Place;
 use App\Models\Reservation;
 use App\Models\Site;
@@ -20,8 +19,11 @@ class ReservationServiceTest extends TestCase
     use RefreshDatabase;
 
     private ReservationService $service;
+
     private User $owner;
+
     private User $tenant;
+
     private Place $place;
 
     protected function setUp(): void

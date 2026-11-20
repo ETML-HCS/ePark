@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Route;
 use Tests\TestCase;
 
 class EnsureOnboardedMiddlewareTest extends TestCase
@@ -19,15 +20,16 @@ class EnsureOnboardedMiddlewareTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->middleware = new EnsureOnboarded();
+        $this->middleware = new EnsureOnboarded;
     }
 
     private function makeRequest(string $routeName = 'dashboard'): Request
     {
         $request = Request::create('/dashboard');
         $request->setRouteResolver(function () use ($routeName) {
-            $route = new \Illuminate\Routing\Route('GET', '/dashboard', []);
+            $route = new Route('GET', '/dashboard', []);
             $route->name($routeName);
+
             return $route;
         });
 
@@ -53,7 +55,7 @@ class EnsureOnboardedMiddlewareTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin', 'onboarded' => false]);
         $request = $this->makeRequest();
-        $request->setUserResolver(fn() => $admin);
+        $request->setUserResolver(fn () => $admin);
 
         $response = $this->middleware->handle($request, $this->next());
         $this->assertEquals('OK', $response->getContent());
@@ -63,7 +65,7 @@ class EnsureOnboardedMiddlewareTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'locataire', 'onboarded' => true]);
         $request = $this->makeRequest();
-        $request->setUserResolver(fn() => $user);
+        $request->setUserResolver(fn () => $user);
 
         $response = $this->middleware->handle($request, $this->next());
         $this->assertEquals('OK', $response->getContent());
@@ -77,7 +79,7 @@ class EnsureOnboardedMiddlewareTest extends TestCase
             'favorite_site_id' => null,
         ]);
         $request = $this->makeRequest();
-        $request->setUserResolver(fn() => $user);
+        $request->setUserResolver(fn () => $user);
 
         $response = $this->middleware->handle($request, $this->next());
         $this->assertTrue($response->isRedirect(route('onboarding.index')));
@@ -94,7 +96,7 @@ class EnsureOnboardedMiddlewareTest extends TestCase
         $user->refresh();
 
         $request = $this->makeRequest();
-        $request->setUserResolver(fn() => $user);
+        $request->setUserResolver(fn () => $user);
 
         $response = $this->middleware->handle($request, $this->next());
         $this->assertEquals('OK', $response->getContent());
@@ -107,7 +109,7 @@ class EnsureOnboardedMiddlewareTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'locataire', 'onboarded' => true]);
         $request = $this->makeRequest('onboarding.index');
-        $request->setUserResolver(fn() => $user);
+        $request->setUserResolver(fn () => $user);
 
         $response = $this->middleware->handle($request, $this->next());
         $this->assertTrue($response->isRedirect(route('dashboard')));

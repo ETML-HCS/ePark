@@ -1,5 +1,6 @@
 @php
     $heightClass = $heightClass ?? 'h-20';
+    $labelClass = $labelClass ?? 'text-slate-600';
     $dayLabels = [1 => 'L', 2 => 'M', 3 => 'M', 4 => 'J', 5 => 'V', 6 => 'S', 0 => 'D'];
 
     $toMinutes = static function (?string $time, int $fallback): int {
@@ -86,8 +87,8 @@
             }
         @endphp
         <div class="flex flex-col items-center gap-1">
-            <span class="text-[10px] font-black text-white">{{ $dayLabel }}</span>
-            <div class="relative w-full {{ $heightClass }} rounded-md overflow-hidden border cursor-help bg-emerald-200/90 border-emerald-100/80" title="{{ $tooltipText }}">
+            <span class="text-[10px] font-bold {{ $labelClass }}">{{ $dayLabel }}</span>
+            <div class="relative w-full {{ $heightClass }} rounded-md overflow-hidden border cursor-help bg-emerald-100 border-[#dce3ed]" title="{{ $tooltipText }}">
                 <div class="absolute inset-0 grid gap-px" style="grid-template-rows: repeat({{ $slotCount }}, minmax(0, 1fr));">
                     @for($slotIndex = 0; $slotIndex < $slotCount; $slotIndex++)
                         @php

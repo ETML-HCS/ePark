@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'favorite_site_id')) {
+            if (! Schema::hasColumn('users', 'favorite_site_id')) {
                 $table->foreignId('favorite_site_id')->nullable()->constrained('sites')->nullOnDelete()->after('role');
             }
         });

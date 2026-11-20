@@ -15,7 +15,6 @@ Thumbs.db
 *.sqlite
 .phpunit.result.cache
 .php-cs-fixer.cache
-composer.lock
 yarn.lock
 npm-debug.log
 

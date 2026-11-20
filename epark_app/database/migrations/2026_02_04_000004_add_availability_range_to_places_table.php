@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('places', function (Blueprint $table) {
-            if (!Schema::hasColumn('places', 'availability_start_date')) {
+            if (! Schema::hasColumn('places', 'availability_start_date')) {
                 $table->date('availability_start_date')->nullable()->after('is_active');
             }
-            if (!Schema::hasColumn('places', 'availability_end_date')) {
+            if (! Schema::hasColumn('places', 'availability_end_date')) {
                 $table->date('availability_end_date')->nullable()->after('availability_start_date');
             }
         });

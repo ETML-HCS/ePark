@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Database\Factories\PlaceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -14,10 +16,14 @@ use Illuminate\Support\Facades\Hash;
  * App\Models\Place
  *
  * @property string $nom
+ * @property float|string|null $feedbacks_avg_rating
+ * @property int|null $feedbacks_count
  */
 class Place extends Model
 {
+    /** @use HasFactory<PlaceFactory> */
     use HasFactory, SoftDeletes;
+
     protected $fillable = [
         'user_id', // propriétaire
         'site_id',
@@ -98,11 +104,11 @@ class Place extends Model
     }
 
     /**
-     * @param array<int, string> $groupCodes
+     * @param  array<int, string>  $groupCodes
      */
     public function isVisibleWithAnyGroupCodes(array $groupCodes, ?string $userEmail = null): bool
     {
-        if (!$this->is_group_reserved) {
+        if (! $this->is_group_reserved) {
             return true;
         }
 
@@ -115,7 +121,7 @@ class Place extends Model
         }
 
         foreach ($groupCodes as $groupCode) {
-            if (!empty($groupCode) && Hash::check((string) $groupCode, $this->group_access_code_hash)) {
+            if (! empty($groupCode) && Hash::check((string) $groupCode, $this->group_access_code_hash)) {
                 return true;
             }
         }
@@ -125,7 +131,7 @@ class Place extends Model
 
     public function isVisibleForAllowedEmailDomain(?string $userEmail): bool
     {
-        if (!$this->is_group_reserved || empty($userEmail)) {
+        if (! $this->is_group_reserved || empty($userEmail)) {
             return false;
         }
 
@@ -145,7 +151,7 @@ class Place extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo<Site, $this>
      */
     public function site(): BelongsTo
     {
@@ -153,7 +159,7 @@ class Place extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -161,24 +167,37 @@ class Place extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany<PlaceAvailability, $this>
      */
     public function availabilities(): HasMany
     {
         return $this->blockedSlots();
     }
 
+    /**
+     * @return HasMany<PlaceAvailability, $this>
+     */
     public function blockedSlots(): HasMany
     {
         return $this->hasMany(PlaceAvailability::class);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany<PlaceUnavailability, $this>
      */
     public function unavailabilities(): HasMany
     {
         return $this->hasMany(PlaceUnavailability::class);
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function feedbacks(): HasManyThrough
+    {
+        return $this->hasManyThrough(Feedback::class, Reservation::class);
     }
 
     /**
@@ -191,6 +210,9 @@ class Place extends Model
 
     public function isReservableFor(Carbon $start, Carbon $end): bool
     {
+        if (! $this->is_active) {
+            return false;
+        }
         if ($this->availability_start_date && $start->lt($this->availability_start_date->startOfDay())) {
             return false;
         }
@@ -203,7 +225,7 @@ class Place extends Model
         }
 
         $day = (int) $start->dayOfWeek; // 0 (dim) -> 6 (sam)
-        $weeklyBlockedSlots = $this->blockedSlots()->where('day_of_week', $day)->get();
+        $weeklyBlockedSlots = $this->blockedSlots->where('day_of_week', $day);
 
         foreach ($weeklyBlockedSlots as $slot) {
             $slotStart = Carbon::parse($start->toDateString().' '.$slot->start_time);
@@ -216,7 +238,7 @@ class Place extends Model
             }
         }
 
-        $exceptions = $this->unavailabilities()->whereDate('date', $start->toDateString())->get();
+        $exceptions = $this->unavailabilities->filter(fn ($exception) => $exception->date->toDateString() === $start->toDateString());
         foreach ($exceptions as $exception) {
             if (empty($exception->start_time) && empty($exception->end_time)) {
                 return false;
@@ -254,12 +276,10 @@ class Place extends Model
             return false;
         }
 
-        $fullDayBlock = $this->unavailabilities()
-            ->whereDate('date', $date->toDateString())
-            ->whereNull('start_time')
-            ->whereNull('end_time')
-            ->exists();
+        $fullDayBlock = $this->unavailabilities->contains(fn ($exception) => $exception->date->toDateString() === $date->toDateString()
+            && empty($exception->start_time) && empty($exception->end_time)
+        );
 
-        return !$fullDayBlock;
+        return ! $fullDayBlock;
     }
 }

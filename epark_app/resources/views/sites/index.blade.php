@@ -1,63 +1,63 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-black text-2xl text-gray-900 flex items-center gap-3">
-                <div class="p-2 bg-indigo-100 rounded-xl">
-                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                </div>
-                Liste des sites
-            </h2>
-            <a href="{{ route('sites.create') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 transform hover:-translate-y-0.5">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span class="hidden sm:inline">Nouveau site</span>
-            </a>
+    <div class="booking-page">
+        <div class="booking-heading">
+            <div>
+                <h1>{{ auth()->user()->isAdmin() ? 'Tous les sites' : 'Mes sites' }}</h1>
+                <p>Regroupez vos places de parking par adresse ou bâtiment.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('places.mes') }}" class="booking-secondary">Mes places</a>
+                <a href="{{ route('sites.create') }}" class="booking-primary">Nouveau site</a>
+            </div>
         </div>
-    </x-slot>
 
-    <div class="py-8 bg-gradient-to-b from-gray-50 to-white min-h-screen">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        @if($errors->any())
+            <div class="booking-error" role="alert">{{ $errors->first() }}</div>
+        @endif
 
-            @if($sites->isEmpty())
-                <div class="text-center py-16">
-                    <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-2xl flex items-center justify-center">
-                        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-1">Aucun site</h3>
-                    <p class="text-sm text-gray-500">Créez votre premier site pour commencer.</p>
-                </div>
-            @else
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach($sites as $site)
-                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 p-6">
-                            <div class="flex items-start justify-between mb-4">
-                                <div class="p-3 bg-indigo-50 rounded-xl">
-                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                    </svg>
-                                </div>
+        @if($sites->isEmpty())
+            <div class="booking-empty ep-card">
+                <h3>Aucun site enregistré</h3>
+                <p>Créez un site pour y rattacher vos places de parking.</p>
+                <a href="{{ route('sites.create') }}" class="booking-primary mt-4">Créer un site</a>
+            </div>
+        @else
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                @foreach($sites as $site)
+                    @php
+                        $placesCount = (int) ($site->places_count ?? 0);
+                    @endphp
+                    <article class="ep-card p-5 flex flex-col">
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="parking-letter" aria-hidden="true">S</span>
+                                <h2 class="font-bold text-base truncate">{{ $site->nom }}</h2>
                             </div>
-                            <h3 class="font-bold text-lg text-gray-900 mb-1">{{ $site->nom }}</h3>
-                            <p class="text-sm text-gray-500 flex items-center gap-1 mb-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                {{ $site->adresse }}
-                            </p>
-                            <p class="text-xs text-gray-400">
-                                Propriétaire : <span class="font-semibold text-gray-600">{{ optional($site->user)->name ?? 'N/A' }}</span>
-                            </p>
+                            <span class="status-pill is-neutral">{{ $placesCount }} {{ $placesCount > 1 ? 'places' : 'place' }}</span>
                         </div>
-                    @endforeach
-                </div>
-            @endif
 
-        </div>
+                        <p class="text-sm text-slate-600">{{ $site->adresse }}</p>
+                        @if(auth()->user()->isAdmin())
+                            <p class="text-xs text-slate-500 mt-2">Propriétaire : {{ $site->user?->name ?? 'N/A' }}</p>
+                        @endif
+
+                        <div class="flex items-center gap-2 mt-auto pt-5 border-t border-[#dce3ed]">
+                            <a href="{{ route('sites.edit', $site) }}" class="booking-secondary flex-1 !min-h-[40px] !py-2 !text-xs">Modifier</a>
+                            <form method="POST" action="{{ route('sites.destroy', $site) }}" onsubmit="return confirm('Supprimer ce site ?');">
+                                @csrf
+                                @method('DELETE')
+                                <button
+                                    type="submit"
+                                    class="booking-secondary !min-h-[40px] !py-2 !px-3 !text-xs !text-rose-700 hover:!bg-rose-50"
+                                    @disabled($placesCount > 0)
+                                    title="{{ $placesCount > 0 ? 'Supprimez d’abord les places rattachées à ce site.' : 'Supprimer ce site' }}">
+                                    Supprimer
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        @endif
     </div>
 </x-app-layout>

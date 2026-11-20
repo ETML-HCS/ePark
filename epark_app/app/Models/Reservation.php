@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\ReservationFactory;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,17 +23,20 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $actual_end_at
  * @property Carbon|null $end_reminder_sent_at
  * @property int $battement_minutes
+ * @property string|null $vehicle_plate
  * @property int $amount_cents
  * @property int $overstay_minutes
  * @property int $penalty_cents
  * @property string $payment_status
  * @property bool $paiement_effectue
- * @property Place $place
- * @property User $user
+ * @property Carbon|null $payment_received_at
+ * @property Place|null $place
+ * @property User|null $user
  * @property Payment|null $payment
  */
 class Reservation extends Model
 {
+    /** @use HasFactory<ReservationFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -41,9 +46,11 @@ class Reservation extends Model
         'date_fin',
         'statut',
         'battement_minutes',
+        'vehicle_plate',
         'amount_cents',
         'payment_status',
         'paiement_effectue',
+        'payment_received_at',
         'owner_message',
         'actual_end_at',
         'overstay_minutes',
@@ -58,6 +65,7 @@ class Reservation extends Model
         'battement_minutes' => 'integer',
         'amount_cents' => 'integer',
         'paiement_effectue' => 'boolean',
+        'payment_received_at' => 'datetime',
         'actual_end_at' => 'datetime',
         'overstay_minutes' => 'integer',
         'penalty_cents' => 'integer',
@@ -76,7 +84,7 @@ class Reservation extends Model
 
     public function place(): BelongsTo
     {
-        return $this->belongsTo(Place::class);
+        return $this->belongsTo(Place::class)->withTrashed();
     }
 
     public function payment(): HasOne
@@ -95,6 +103,9 @@ class Reservation extends Model
 
     /**
      * Filtre les réservations en attente.
+     *
+     * @param  Builder<Reservation>  $query
+     * @return Builder<Reservation>
      */
     public function scopePending(Builder $query): Builder
     {
@@ -103,6 +114,9 @@ class Reservation extends Model
 
     /**
      * Filtre les réservations terminées (confirmées et passées).
+     *
+     * @param  Builder<Reservation>  $query
+     * @return Builder<Reservation>
      */
     public function scopeCompleted(Builder $query): Builder
     {
@@ -112,6 +126,9 @@ class Reservation extends Model
 
     /**
      * Filtre les réservations confirmées.
+     *
+     * @param  Builder<Reservation>  $query
+     * @return Builder<Reservation>
      */
     public function scopeConfirmed(Builder $query): Builder
     {
@@ -120,6 +137,9 @@ class Reservation extends Model
 
     /**
      * Filtre les réservations actives (non annulées).
+     *
+     * @param  Builder<Reservation>  $query
+     * @return Builder<Reservation>
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -128,6 +148,9 @@ class Reservation extends Model
 
     /**
      * Filtre les réservations pour une place donnée.
+     *
+     * @param  Builder<Reservation>  $query
+     * @return Builder<Reservation>
      */
     public function scopeForPlace(Builder $query, int $placeId): Builder
     {
@@ -136,10 +159,13 @@ class Reservation extends Model
 
     /**
      * Filtre les réservations pour un propriétaire de places.
+     *
+     * @param  Builder<Reservation>  $query
+     * @return Builder<Reservation>
      */
     public function scopeForOwner(Builder $query, int $userId): Builder
     {
-        return $query->whereHas('place', fn($q) => $q->where('user_id', $userId));
+        return $query->whereHas('place', fn ($q) => $q->where('user_id', $userId));
     }
 
     // -------------------------------------------------------------------------
@@ -186,6 +212,11 @@ class Reservation extends Model
         return $this->payment_status === 'paid';
     }
 
+    public function isPaymentReceived(): bool
+    {
+        return $this->payment_received_at !== null;
+    }
+
     /**
      * Vérifie si la réservation peut être confirmée.
      */
@@ -205,9 +236,10 @@ class Reservation extends Model
         // Requête SQL optimisée avec calcul du battement directement en base
         $builder = self::query()
             ->where('place_id', $placeId)
-            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
             ->active();
 
+        /** @var Connection $connection */
         $connection = $builder->getConnection();
         $driver = $connection->getDriverName();
 

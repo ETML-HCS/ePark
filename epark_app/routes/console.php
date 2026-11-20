@@ -1,8 +1,9 @@
 <?php
 
 use App\Models\Reservation;
-use App\Notifications\ReservationOwnerDeadlineReminder;
 use App\Notifications\ReservationEndReminder;
+use App\Notifications\ReservationOwnerDeadlineReminder;
+use App\Services\NotificationDelivery;
 use App\Services\ReservationService;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Inspiring;
@@ -14,32 +15,50 @@ Artisan::command('inspire', function () {
 
 Artisan::command('reservations:send-end-reminders', function () {
     $now = now();
-    $targetStart = $now->copy()->addMinutes(15)->startOfMinute();
-    $targetEnd = $now->copy()->addMinutes(15)->endOfMinute();
+    $targetStart = $now->copy()->addMinutes(15)->startOfMinute()->format('Y-m-d H:i:s');
+    $targetEnd = $now->copy()->addMinutes(15)->endOfMinute()->format('Y-m-d H:i:s');
 
-    $reservations = Reservation::query()
+    /** @var NotificationDelivery $notificationDelivery */
+    $notificationDelivery = app(NotificationDelivery::class);
+
+    $query = Reservation::query()
         ->confirmed()
-        ->whereNull('end_reminder_sent_at')
-        ->whereRaw(
+        ->whereNull('end_reminder_sent_at');
+
+    $driver = $query->getConnection()->getDriverName();
+    if ($driver === 'sqlite') {
+        $query->whereRaw(
+            "datetime(date_fin, '+' || COALESCE(battement_minutes, 0) || ' minutes') BETWEEN ? AND ?",
+            [$targetStart, $targetEnd]
+        );
+    } else {
+        $query->whereRaw(
             'DATE_ADD(date_fin, INTERVAL COALESCE(battement_minutes, 0) MINUTE) BETWEEN ? AND ?',
             [$targetStart, $targetEnd]
-        )
-        ->with(['user', 'place'])
-        ->get();
-
-    foreach ($reservations as $reservation) {
-        $reservation->user->notify(new ReservationEndReminder($reservation));
-        $reservation->end_reminder_sent_at = $now;
-        $reservation->save();
+        );
     }
 
-    $this->info('End reminders sent: ' . $reservations->count());
+    $reservations = $query->with(['user', 'place'])->get();
+    $sent = 0;
+
+    foreach ($reservations as $reservation) {
+        if ($notificationDelivery->send($reservation->user, new ReservationEndReminder($reservation))) {
+            $reservation->end_reminder_sent_at = $now;
+            $reservation->save();
+            $sent++;
+        }
+    }
+
+    $this->info('End reminders sent: '.$sent);
 })->purpose('Send 15-minute end reminders for reservations');
 
 Artisan::command('reservations:send-owner-validation-reminders', function () {
     $now = now();
     $reminderThreshold = $now->copy()->addHours(25)->addMinutes(30);
     $deadlineThreshold = $now->copy()->addHours(24);
+
+    /** @var NotificationDelivery $notificationDelivery */
+    $notificationDelivery = app(NotificationDelivery::class);
 
     $reservations = Reservation::query()
         ->pending()
@@ -55,17 +74,18 @@ Artisan::command('reservations:send-owner-validation-reminders', function () {
 
     foreach ($reservations as $reservation) {
         $owner = $reservation->place?->user ?? $reservation->place?->site?->user;
-        if (!$owner || $owner->id === $reservation->user_id) {
+        if (! $owner || $owner->id === $reservation->user_id) {
             continue;
         }
 
-        $owner->notify(new ReservationOwnerDeadlineReminder($reservation));
-        $reservation->owner_deadline_reminder_sent_at = $now;
-        $reservation->save();
-        $sent++;
+        if ($notificationDelivery->send($owner, new ReservationOwnerDeadlineReminder($reservation))) {
+            $reservation->owner_deadline_reminder_sent_at = $now;
+            $reservation->save();
+            $sent++;
+        }
     }
 
-    $this->info('Owner validation reminders sent: ' . $sent);
+    $this->info('Owner validation reminders sent: '.$sent);
 })->purpose('Send owner reminder 90 minutes before 24h default validation deadline');
 
 Artisan::command('reservations:apply-default-validation', function () {
@@ -79,6 +99,7 @@ Artisan::command('reservations:apply-default-validation', function () {
         ->pending()
         ->where('payment_status', 'paid')
         ->where('date_debut', '<=', $deadline)
+        ->where('date_fin', '>', $now)
         ->whereHas('place', fn ($query) => $query->whereIn('pending_validation_default', ['confirm', 'refuse']))
         ->with(['place', 'user'])
         ->get();
@@ -89,25 +110,30 @@ Artisan::command('reservations:apply-default-validation', function () {
     foreach ($reservations as $reservation) {
         $defaultAction = (string) ($reservation->place?->pending_validation_default ?? 'manual');
 
-        if ($defaultAction === 'confirm') {
-            $reservationService->confirmReservation(
-                $reservation,
-                'Validation automatique appliquée à J-1 selon la règle par défaut de la place.'
-            );
-            $confirmed++;
-            continue;
-        }
+        try {
+            if ($defaultAction === 'confirm') {
+                $reservationService->confirmReservation(
+                    $reservation,
+                    'Validation automatique appliquée à J-1 selon la règle par défaut de la place.'
+                );
+                $confirmed++;
 
-        if ($defaultAction === 'refuse') {
-            $reservationService->cancelReservation(
-                $reservation,
-                'Refus automatique appliqué à J-1 selon la règle par défaut de la place.'
-            );
-            $refused++;
+                continue;
+            }
+
+            if ($defaultAction === 'refuse') {
+                $reservationService->cancelReservation(
+                    $reservation,
+                    'Refus automatique appliqué à J-1 selon la règle par défaut de la place.'
+                );
+                $refused++;
+            }
+        } catch (InvalidArgumentException $exception) {
+            report($exception);
         }
     }
 
-    $this->info('Default validations applied - confirmed: ' . $confirmed . ', refused: ' . $refused);
+    $this->info('Default validations applied - confirmed: '.$confirmed.', refused: '.$refused);
 })->purpose('Apply default owner decision to pending paid reservations 24h before start');
 
 app()->booted(function () {

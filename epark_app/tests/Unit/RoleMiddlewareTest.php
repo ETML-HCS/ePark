@@ -19,14 +19,14 @@ class RoleMiddlewareTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->middleware = new RoleMiddleware();
+        $this->middleware = new RoleMiddleware;
     }
 
     private function makeRequest(?User $user = null): Request
     {
         $request = Request::create('/test');
         if ($user) {
-            $request->setUserResolver(fn() => $user);
+            $request->setUserResolver(fn () => $user);
         }
 
         return $request;

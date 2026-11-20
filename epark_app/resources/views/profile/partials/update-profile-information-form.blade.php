@@ -3,85 +3,125 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" class="space-y-5">
         @csrf
         @method('patch')
 
         <div>
-            <label for="name" class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
-                Nom complet
-            </label>
-            <input 
-                id="name" 
-                name="name" 
-                type="text" 
-                value="{{ old('name', $user->name) }}" 
-                required 
-                autofocus 
+            <label for="name" class="block text-sm font-semibold mb-1.5">Nom complet</label>
+            <input
+                id="name"
+                name="name"
+                type="text"
+                value="{{ old('name', $user->name) }}"
+                required
+                autofocus
                 autocomplete="name"
-                class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
+                class="ep-input">
             @if($errors->get('name'))
-                <p class="mt-2 text-sm text-red-600">{{ $errors->first('name') }}</p>
+                <p class="mt-1.5 text-sm text-rose-700">{{ $errors->first('name') }}</p>
             @endif
         </div>
 
         <div>
-            <label for="email" class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-                Adresse email
-            </label>
-            <input 
-                id="email" 
-                name="email" 
-                type="email" 
-                value="{{ old('email', $user->email) }}" 
-                required 
+            <label for="email" class="block text-sm font-semibold mb-1.5">Adresse e-mail</label>
+            <input
+                id="email"
+                name="email"
+                type="email"
+                value="{{ old('email', $user->email) }}"
+                required
                 autocomplete="username"
-                class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-indigo-500 hover:border-gray-300 transition-all font-medium text-gray-900">
+                class="ep-input">
             @if($errors->get('email'))
-                <p class="mt-2 text-sm text-red-600">{{ $errors->first('email') }}</p>
+                <p class="mt-1.5 text-sm text-rose-700">{{ $errors->first('email') }}</p>
             @endif
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                    <div class="flex items-start gap-3">
-                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-yellow-900 mb-2">
-                                Votre adresse email n'est pas vérifiée.
-                            </p>
-                            <button form="send-verification" class="text-sm font-bold text-yellow-700 underline hover:text-yellow-900">
-                                Cliquez ici pour renvoyer l'email de vérification
-                            </button>
+                <div class="mt-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm">
+                    <p class="font-semibold text-amber-900">Votre adresse e-mail n’est pas vérifiée.</p>
+                    <p class="text-xs text-amber-800 mt-1">La vérification est requise pour accéder automatiquement aux groupes privés liés à votre domaine e-mail.</p>
+                    <button form="send-verification" class="text-link text-sm mt-2 inline-block">
+                        Renvoyer l’e-mail de vérification
+                    </button>
 
-                            @if (session('status') === 'verification-link-sent')
-                                <p class="mt-2 text-sm font-medium text-green-600 flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Un nouveau lien de vérification a été envoyé
-                                </p>
-                            @endif
-                        </div>
-                    </div>
+                    @if (session('status') === 'verification-link-sent')
+                        <p class="mt-2 text-sm font-semibold text-[#166534]">
+                            Un nouveau lien de vérification a été envoyé.
+                        </p>
+                    @endif
                 </div>
             @endif
         </div>
 
-        <div class="flex items-center gap-4 pt-4">
-            <button type="submit" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Enregistrer
-            </button>
+        <div class="pt-4 border-t border-[#dce3ed]">
+            <label for="quick_vehicle_plate" class="block text-sm font-semibold mb-1.5">Plaque d’immatriculation habituelle <span class="text-xs font-normal text-slate-500">(facultatif)</span></label>
+            <input
+                id="quick_vehicle_plate"
+                name="quick_vehicle_plate"
+                type="text"
+                maxlength="20"
+                value="{{ old('quick_vehicle_plate', $user->quick_vehicle_plate) }}"
+                placeholder="Ex. : VD 123456"
+                class="ep-input uppercase max-w-xs">
+            <p class="mt-1 text-xs text-slate-600">Pré-remplie automatiquement lors de vos réservations et affichée au propriétaire.</p>
+            @if($errors->get('quick_vehicle_plate'))
+                <p class="mt-1.5 text-sm text-rose-700">{{ $errors->first('quick_vehicle_plate') }}</p>
+            @endif
+        </div>
+
+        <div class="pt-4 border-t border-[#dce3ed] space-y-4">
+            <div>
+                <h3 class="text-sm font-bold">Coordonnées de règlement (propriétaire)</h3>
+                <p class="text-xs text-slate-600 mt-0.5">Affichées aux locataires sur leurs réservations pour faciliter les paiements TWINT ou par virement.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="twint_phone" class="block text-sm font-semibold mb-1.5">Numéro TWINT</label>
+                    <input
+                        id="twint_phone"
+                        name="twint_phone"
+                        type="text"
+                        maxlength="32"
+                        value="{{ old('twint_phone', $user->twint_phone) }}"
+                        placeholder="Ex. : +41 79 123 45 67"
+                        class="ep-input">
+                    @if($errors->get('twint_phone'))
+                        <p class="mt-1.5 text-sm text-rose-700">{{ $errors->first('twint_phone') }}</p>
+                    @endif
+                </div>
+                <div>
+                    <label for="iban" class="block text-sm font-semibold mb-1.5">IBAN</label>
+                    <input
+                        id="iban"
+                        name="iban"
+                        type="text"
+                        maxlength="42"
+                        value="{{ old('iban', $user->iban) }}"
+                        placeholder="Ex. : CH93 0076 2011 6238 5295 7"
+                        class="ep-input uppercase">
+                    @if($errors->get('iban'))
+                        <p class="mt-1.5 text-sm text-rose-700">{{ $errors->first('iban') }}</p>
+                    @endif
+                </div>
+            </div>
+            <div>
+                <label for="payment_instructions" class="block text-sm font-semibold mb-1.5">Instructions complémentaires (optionnel)</label>
+                <textarea
+                    id="payment_instructions"
+                    name="payment_instructions"
+                    rows="2"
+                    maxlength="500"
+                    placeholder="Ex. : Merci d’indiquer le numéro de réservation en référence."
+                    class="ep-input">{{ old('payment_instructions', $user->payment_instructions) }}</textarea>
+                @if($errors->get('payment_instructions'))
+                    <p class="mt-1.5 text-sm text-rose-700">{{ $errors->first('payment_instructions') }}</p>
+                @endif
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 pt-2">
+            <button type="submit" class="booking-primary">Enregistrer</button>
 
             @if (session('status') === 'profile-updated')
                 <p
@@ -89,12 +129,10 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 3000)"
-                    class="flex items-center gap-2 text-sm font-medium text-green-600"
+                    class="text-sm font-semibold text-[#166534]"
+                    role="status"
                 >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Modifications enregistrées !
+                    Modifications enregistrées.
                 </p>
             @endif
         </div>

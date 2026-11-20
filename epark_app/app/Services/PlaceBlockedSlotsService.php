@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\Place;
+use App\Models\PlaceAvailability;
+use App\Models\PlaceUnavailability;
 use App\Models\Reservation;
+use App\Support\BookingPeriod;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -16,10 +19,9 @@ class PlaceBlockedSlotsService
     /**
      * Récupère les places disponibles pour une date donnée avec leurs créneaux.
      *
-     * @param int|null $excludeUserId Exclure les places appartenant a cet utilisateur.
-     * @param array<int, string> $groupCodes
-     * @param string|null $userEmail
-     * @return array{places: Collection<int, Place>, placeHours: array<int, array<int, string>>}
+     * @param  int|null  $excludeUserId  Exclure les places appartenant a cet utilisateur.
+     * @param  array<int, string>  $groupCodes
+     * @return array{places: Collection<int, Place>, placeHours: array<int, array<int, string>>, placeSegments: array<int, array<int, string>>}
      */
     public function getAvailablePlacesForDate(Carbon $date, ?int $excludeUserId = null, array $groupCodes = [], ?string $userEmail = null): array
     {
@@ -28,6 +30,8 @@ class PlaceBlockedSlotsService
                 $query->where('user_id', '!=', $excludeUserId);
             })
             ->with(['blockedSlots', 'unavailabilities', 'site'])
+            ->withAvg('feedbacks', 'rating')
+            ->withCount('feedbacks')
             ->get()
             ->filter(fn (Place $place) => $place->isVisibleWithAnyGroupCodes($groupCodes, $userEmail))
             ->values();
@@ -37,16 +41,31 @@ class PlaceBlockedSlotsService
         $dayStart = $date->copy()->startOfDay();
         $dayEnd = $date->copy()->endOfDay();
 
+        $reservationsByPlace = Reservation::query()
+            ->whereIn('place_id', $places->pluck('id'))
+            ->active()
+            ->where('date_debut', '<', $dayEnd->copy()->addMinutes(5))
+            ->where('date_fin', '>=', $dayStart->copy()->subDay())
+            ->get(['place_id', 'date_debut', 'date_fin', 'battement_minutes'])
+            ->groupBy('place_id');
+
+        $placeSegments = [];
         foreach ($places as $place) {
-            $reservations = Reservation::query()
-                ->forPlace($place->id)
-                ->active()
-                ->where('date_debut', '<', $dayEnd)
-                ->where('date_fin', '>', $dayStart)
-                ->get(['date_debut', 'date_fin', 'battement_minutes']);
+            $reservations = $reservationsByPlace->get($place->id, collect());
+
+            $placeSegments[$place->id] = collect(BookingPeriod::SEGMENTS)
+                ->keys()
+                ->filter(function ($segment) use ($place, $date, $reservations) {
+                    [$start, $end] = BookingPeriod::range($date, $segment);
+
+                    return $start->gt(now())
+                        && $place->isAvailableFor($start, $end)
+                        && ! $this->isBlockedByReservation($start, $end->copy()->addMinutes(5), $reservations);
+                })
+                ->values()->all();
 
             $hours = $this->computeAvailableHours($place, $date, $reservations);
-            if (!empty($hours)) {
+            if (! empty($hours)) {
                 $placeHours[$place->id] = $hours;
                 $filteredPlaces->push($place);
             }
@@ -55,17 +74,19 @@ class PlaceBlockedSlotsService
         return [
             'places' => $filteredPlaces,
             'placeHours' => $placeHours,
+            'placeSegments' => $placeSegments,
         ];
     }
 
     /**
      * Calcule les heures de début disponibles (créneaux d'1h) pour une place et une date.
      *
+     * @param  Collection<int, Reservation>|null  $reservations
      * @return array<int, string>
      */
     public function computeAvailableHours(Place $place, Carbon $date, ?Collection $reservations = null): array
     {
-        if (!$place->isReservableForDate($date)) {
+        if (! $place->isReservableForDate($date)) {
             return [];
         }
 
@@ -107,15 +128,16 @@ class PlaceBlockedSlotsService
         return $hours;
     }
 
-
     /**
      * Vérifie si un créneau est dans une plage de disponibilité.
+     *
+     * @param  Collection<int, PlaceAvailability>  $slots
      */
     private function overlapsWeeklyBlockedSlot(Carbon $start, Carbon $end, Collection $slots, Carbon $date): bool
     {
         foreach ($slots as $slot) {
-            $slotStart = Carbon::parse($date->toDateString() . ' ' . $slot->start_time);
-            $slotEnd = Carbon::parse($date->toDateString() . ' ' . $slot->end_time);
+            $slotStart = Carbon::parse($date->toDateString().' '.$slot->start_time);
+            $slotEnd = Carbon::parse($date->toDateString().' '.$slot->end_time);
 
             if ($start < $slotEnd && $end > $slotStart) {
                 return true;
@@ -127,12 +149,14 @@ class PlaceBlockedSlotsService
 
     /**
      * Vérifie si un créneau est bloqué par une exception.
+     *
+     * @param  Collection<int, PlaceUnavailability>  $exceptions
      */
     private function isBlockedByException(Carbon $start, Carbon $end, Collection $exceptions, Carbon $date): bool
     {
         foreach ($exceptions as $exception) {
-            $exStart = Carbon::parse($date->toDateString() . ' ' . $exception->start_time);
-            $exEnd = Carbon::parse($date->toDateString() . ' ' . $exception->end_time);
+            $exStart = Carbon::parse($date->toDateString().' '.$exception->start_time);
+            $exEnd = Carbon::parse($date->toDateString().' '.$exception->end_time);
 
             if ($start < $exEnd && $end > $exStart) {
                 return true;
@@ -144,6 +168,8 @@ class PlaceBlockedSlotsService
 
     /**
      * Vérifie si un créneau est bloqué par une réservation existante (battement inclus).
+     *
+     * @param  Collection<int, Reservation>|null  $reservations
      */
     private function isBlockedByReservation(Carbon $start, Carbon $end, ?Collection $reservations): bool
     {
@@ -165,6 +191,8 @@ class PlaceBlockedSlotsService
 
     /**
      * Trouve le premier créneau disponible dans un segment horaire.
+     *
+     * @param  array<int, string>  $hours
      */
     public function findFirstHourInSegment(array $hours, string $segment): ?string
     {
@@ -175,7 +203,7 @@ class PlaceBlockedSlotsService
             'nuit' => [0, 450],
         ];
 
-        if (!isset($segmentRanges[$segment])) {
+        if (! isset($segmentRanges[$segment])) {
             return null;
         }
 

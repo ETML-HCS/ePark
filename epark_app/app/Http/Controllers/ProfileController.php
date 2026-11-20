@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Place;
+use App\Models\Reservation;
+use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Contracts\View\View;
 
 class ProfileController extends Controller
 {
@@ -18,7 +21,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
         return view('profile.edit', [
@@ -31,10 +34,28 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
-        $user->fill($request->validated());
+        $validated = $request->validated();
+        if (array_key_exists('quick_vehicle_plate', $validated)) {
+            $plate = trim((string) $validated['quick_vehicle_plate']);
+            $validated['quick_vehicle_plate'] = $plate !== '' ? mb_strtoupper($plate) : null;
+        }
+        if (array_key_exists('iban', $validated)) {
+            $iban = trim((string) $validated['iban']);
+            $validated['iban'] = $iban !== '' ? mb_strtoupper($iban) : null;
+        }
+        if (array_key_exists('twint_phone', $validated)) {
+            $phone = trim((string) $validated['twint_phone']);
+            $validated['twint_phone'] = $phone !== '' ? $phone : null;
+        }
+        if (array_key_exists('payment_instructions', $validated)) {
+            $instructions = trim((string) $validated['payment_instructions']);
+            $validated['payment_instructions'] = $instructions !== '' ? $instructions : null;
+        }
+
+        $user->fill($validated);
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
@@ -66,19 +87,19 @@ class ProfileController extends Controller
             ->get()
             ->first(fn (Place $place) => Hash::check($groupCode, (string) $place->group_access_code_hash));
 
-        if (!$matchingPlace) {
+        if (! $matchingPlace) {
             return Redirect::route('profile.edit')->withErrors([
                 'secret_group_code' => 'Nom de groupe ou code invalide.',
             ], 'secretGroup');
         }
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
         $entries = collect($user->secretGroupEntries());
         $alreadyExists = $entries->contains(fn (array $entry) => mb_strtolower($entry['code']) === mb_strtolower($groupCode));
 
-        if (!$alreadyExists) {
+        if (! $alreadyExists) {
             $entries->push([
                 'name' => (string) ($matchingPlace->group_name ?? $groupName),
                 'code' => $groupCode,
@@ -102,9 +123,9 @@ class ProfileController extends Controller
 
         $codeToRemove = trim((string) $validated['secret_group_code_remove']);
 
-        /** @var \App\Models\User|null $user */
+        /** @var User|null $user */
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return Redirect::route('profile.edit');
         }
 
@@ -134,10 +155,26 @@ class ProfileController extends Controller
             'password' => ['required', 'current_password'],
         ]);
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
+        $hasActiveReservations = Reservation::query()
+            ->where('statut', '!=', 'annulée')
+            ->where('date_fin', '>=', now())
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhereHas('place', fn ($placeQuery) => $placeQuery->where('user_id', $user->id));
+            })
+            ->exists();
+
+        if ($hasActiveReservations) {
+            return Redirect::route('profile.edit')->withErrors([
+                'account' => 'Impossible de supprimer votre compte tant que des réservations sont actives ou à venir.',
+            ], 'userDeletion');
+        }
+
         Auth::logout();
+        Cookie::queue(Cookie::forget('epark_express_key'));
 
         $user->delete();
 

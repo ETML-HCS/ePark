@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 /**
  * Contrôleur pour le feedback des réservations.
- * 
+ *
  * Permet aux utilisateurs de laisser un avis après une réservation terminée.
  */
 class FeedbackController extends Controller
@@ -19,7 +19,7 @@ class FeedbackController extends Controller
     /**
      * Affiche le formulaire de feedback pour une réservation.
      */
-    public function create(Request $request, Reservation $reservation): View
+    public function create(Request $request, Reservation $reservation): View|RedirectResponse
     {
         /** @var User $user */
         $user = $request->user();
