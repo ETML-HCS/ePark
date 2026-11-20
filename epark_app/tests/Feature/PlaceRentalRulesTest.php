@@ -63,7 +63,7 @@ class PlaceRentalRulesTest extends TestCase
             ->assertOk()
             ->assertSee('Gratuit – CHF 2.50/h')
             ->assertSee('Grille hebdomadaire des disponibilités et tarifs')
-            ->assertSee('Grat.')
+            ->assertSee('0.-')
             ->assertSee('2.50')
             ->assertSee('Lun–Ven')
             ->assertSee('Sam–Dim');
@@ -76,7 +76,8 @@ class PlaceRentalRulesTest extends TestCase
         $this->actingAs($owner)
             ->get(route('places.create'))
             ->assertOk()
-            ->assertSee('Aperçu visuel de la semaine');
+            ->assertSee('Semaine gratuit + Week-end payant')
+            ->assertSee('Votre planning &amp; tarifs en un coup d’œil', false);
 
         $this->actingAs($owner)
             ->get(route('places.blocked-slots.edit', $place->id))

@@ -1,6 +1,7 @@
 export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {}) => ({
     maxRules,
     defaultPrice: String(defaultPrice ?? '2.00'),
+    pricingMode: Array.isArray(initialRules) && initialRules.length > 0 ? 'rules' : 'single',
     nextUid: 1,
     rules: [],
     dayOptions: [
@@ -108,10 +109,38 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
         }
         return false;
     },
+    setPricingMode(mode) {
+        this.pricingMode = mode;
+        if (mode === 'single') {
+            this.rules = [];
+        } else if (mode === 'rules' && this.rules.length === 0) {
+            this.applyComboSemaineWeekend();
+        }
+    },
+    applyComboSemaineWeekend() {
+        this.pricingMode = 'rules';
+        this.rules = [
+            {
+                uid: this.nextUid++,
+                label: 'Semaine journée',
+                days: [1, 2, 3, 4, 5],
+                segments: ['matin_travail', 'aprem_travail', 'journee'],
+                hourly_price: '0.00',
+            },
+            {
+                uid: this.nextUid++,
+                label: 'Week-end',
+                days: [6, 0],
+                segments: ['matin_travail', 'aprem_travail', 'journee'],
+                hourly_price: this.defaultPrice && Number(this.defaultPrice) > 0 ? Number(this.defaultPrice).toFixed(2) : '2.00',
+            },
+        ];
+    },
     addPreset(preset) {
         if (this.rules.length >= this.maxRules) {
             return;
         }
+        this.pricingMode = 'rules';
         const price = preset.hourly_price !== null ? preset.hourly_price : this.defaultPrice;
         this.rules.push({
             uid: this.nextUid++,
@@ -126,6 +155,7 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
     },
     clearAll() {
         this.rules = [];
+        this.pricingMode = 'single';
     },
     toggleDay(rule, dayId) {
         if (rule.days.includes(dayId)) {
@@ -189,7 +219,7 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
         return this.paidPalettes[(idx >= 0 ? idx : 0) % this.paidPalettes.length];
     },
     formatCompactCents(cents) {
-        if (cents === 0) return 'Grat.';
+        if (cents === 0) return '0.-';
         const chf = cents / 100;
         if (Math.abs(chf - Math.round(chf)) < 0.001) {
             return `${Math.round(chf)}.-`;
@@ -199,6 +229,36 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
     formatFullCents(cents) {
         if (cents === 0) return 'Gratuit';
         return `CHF ${(cents / 100).toFixed(2)}/h`;
+    },
+    formatDaysSummary(days) {
+        const sorted = [...new Set(days)].sort((a, b) => a - b);
+        if (sorted.join(',') === '0,1,2,3,4,5,6') return '7j/7';
+        if (sorted.join(',') === '1,2,3,4,5') return 'Lun–Ven';
+        if (sorted.join(',') === '0,6') return 'Sam–Dim';
+        return this.dayOptions.filter((d) => sorted.includes(d.id)).map((d) => d.short).join(', ');
+    },
+    formatSegmentsSummary(segments) {
+        if (segments.includes('journee') && segments.includes('matin_travail') && segments.includes('aprem_travail')) {
+            const others = segments.filter((s) => !['journee', 'matin_travail', 'aprem_travail'].includes(s));
+            const labels = ['Journée', ...others.map((s) => this.segmentOptions.find((o) => o.key === s)?.label || s)];
+            return labels.join(', ');
+        }
+        return segments.map((s) => this.segmentOptions.find((o) => o.key === s)?.label || s).join(', ');
+    },
+    get liveSummaries() {
+        return this.rules
+            .filter((r) => r.days.length && r.segments.length)
+            .map((r) => {
+                const cents = Math.max(0, Math.round(Number(r.hourly_price || 0) * 100));
+                return {
+                    uid: r.uid,
+                    days: this.formatDaysSummary(r.days),
+                    segments: this.formatSegmentsSummary(r.segments),
+                    price: this.formatFullCents(cents),
+                    dotClass: this.paletteForCents(cents).dot,
+                    isFree: cents === 0,
+                };
+            });
     },
     cellFor(dayId, band) {
         for (const rule of this.rules) {
@@ -220,8 +280,8 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
         const dayLabel = this.dayOptions.find((d) => d.id === dayId)?.short || '';
         return {
             open: false,
-            text: '—',
-            cellClass: 'bg-slate-100 text-slate-400',
+            text: '',
+            cellClass: 'bg-slate-100/70',
             title: `${dayLabel} · ${band.label} (${band.hours}) : Fermé`,
         };
     },

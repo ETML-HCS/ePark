@@ -2,7 +2,7 @@
     $heightClass = $heightClass ?? 'h-20';
     $labelClass = $labelClass ?? 'text-slate-600';
     $compact = (bool) ($compact ?? false);
-    $dayLabels = [1 => 'L', 2 => 'M', 3 => 'M', 4 => 'J', 5 => 'V', 6 => 'S', 0 => 'D'];
+    $dayLabels = [1 => 'Lun', 2 => 'Mar', 3 => 'Mer', 4 => 'Jeu', 5 => 'Ven', 6 => 'Sam', 0 => 'Dim'];
     $dayFullNames = [1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi', 4 => 'Jeudi', 5 => 'Vendredi', 6 => 'Samedi', 0 => 'Dimanche'];
 
     $toMinutes = static function (?string $time, int $fallback): int {
@@ -28,7 +28,7 @@
 
     $formatCompactPrice = static function (int $cents): string {
         if ($cents === 0) {
-            return 'Grat.';
+            return '0.-';
         }
         $chf = $cents / 100;
         if (abs($chf - round($chf)) < 0.001) {
@@ -46,7 +46,7 @@
 @if($hasRentalRules)
     @php
         $bands = [
-            ['key' => 'matin', 'label' => 'Mat.', 'full' => 'Matin (08:00–12:00)', 'segments' => ['matin_travail', 'journee'], 'start' => 480, 'end' => 720],
+            ['key' => 'matin', 'label' => 'Matin', 'full' => 'Matin (08:00–12:00)', 'segments' => ['matin_travail', 'journee'], 'start' => 480, 'end' => 720],
             ['key' => 'aprem', 'label' => 'Ap.-m.', 'full' => 'Après-midi (12:00–17:30)', 'segments' => ['aprem_travail', 'journee'], 'start' => 720, 'end' => 1050],
             ['key' => 'soir', 'label' => 'Soir', 'full' => 'Soir (18:00–00:00)', 'segments' => ['soir'], 'start' => 1080, 'end' => 1440],
             ['key' => 'nuit', 'label' => 'Nuit', 'full' => 'Nuit (00:00–07:30)', 'segments' => ['nuit'], 'start' => 0, 'end' => 450],
@@ -78,10 +78,10 @@
     @endphp
 
     <div class="w-full {{ $compact ? '' : 'max-w-md' }}" aria-label="Grille hebdomadaire des disponibilités et tarifs">
-        <div class="grid grid-cols-[40px_repeat(7,minmax(0,1fr))] gap-1 items-center">
+        <div class="grid grid-cols-[44px_repeat(7,minmax(0,1fr))] gap-1 items-center">
             <div></div>
             @foreach($dayLabels as $dayIndex => $dayLabel)
-                <span class="text-center text-[10px] font-bold {{ $labelClass }}">{{ $dayLabel }}</span>
+                <span class="text-center text-[10px] font-bold {{ in_array($dayIndex, [0, 6], true) ? 'text-[#4338ca]' : $labelClass }}">{{ $dayLabel }}</span>
             @endforeach
 
             @foreach($bands as $band)
@@ -123,8 +123,8 @@
                             $ruleTitle = $matchedRule['label'] !== '' ? ' ('.$matchedRule['label'].')' : '';
                             $tooltip = $dayFullNames[$dayIndex].' · '.$band['full'].' : '.$priceHuman.$ruleTitle;
                         } else {
-                            $cellClass = 'bg-slate-100 text-slate-400';
-                            $cellText = '—';
+                            $cellClass = 'bg-slate-100/70';
+                            $cellText = '';
                             $tooltip = $dayFullNames[$dayIndex].' · '.$band['full'].' : Fermé';
                         }
                     @endphp
@@ -142,7 +142,7 @@
             @if($hasFreeBand)
                 <span class="inline-flex items-center gap-1">
                     <span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block"></span>
-                    Gratuit
+                    0.- = Gratuit
                 </span>
             @endif
             @foreach($paidRates as $cents)
@@ -157,10 +157,6 @@
                     Bloqué
                 </span>
             @endif
-            <span class="inline-flex items-center gap-1">
-                <span class="w-2.5 h-2.5 rounded-sm bg-slate-200 inline-block"></span>
-                Fermé
-            </span>
         </div>
     </div>
 @else
@@ -234,7 +230,7 @@
                     }
                 @endphp
                 <div class="flex flex-col items-center gap-1">
-                    <span class="text-[10px] font-bold {{ $labelClass }}">{{ $dayLabel }}</span>
+                    <span class="text-[10px] font-bold {{ in_array($dayIndex, [0, 6], true) ? 'text-[#4338ca]' : $labelClass }}">{{ $dayLabel }}</span>
                     <div class="relative w-full {{ $heightClass }} rounded-md overflow-hidden border cursor-help bg-slate-100 border-[#dce3ed]" title="{{ $tooltipText }}">
                         <div class="absolute inset-0 grid gap-px" style="grid-template-rows: repeat({{ $slotCount }}, minmax(0, 1fr));">
                             @for($slotIndex = 0; $slotIndex < $slotCount; $slotIndex++)

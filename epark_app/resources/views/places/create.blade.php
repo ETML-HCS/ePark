@@ -87,25 +87,7 @@
                     </div>
                 </div>
 
-                {{-- Tarif horaire --}}
-                <div>
-                    <label for="hourly_price" class="block text-sm font-semibold mb-1.5">Tarif horaire par défaut (CHF) <span class="text-rose-700">*</span></label>
-                    <div class="grid gap-3 sm:grid-cols-2 items-start">
-                        <div class="relative">
-                            <input type="number" id="hourly_price" name="hourly_price" x-model="price" min="0" step="0.05" class="ep-input pr-14 font-bold text-lg" required>
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">CHF/h</span>
-                        </div>
-                        <div class="flex flex-wrap gap-1.5">
-                            @foreach(['0.00' => 'Gratuit', '1.00' => '1.00', '2.00' => '2.00', '2.50' => '2.50', '3.00' => '3.00', '3.50' => '3.50'] as $val => $label)
-                                <button type="button" @click="price = '{{ $val }}'" :class="price === '{{ $val }}' ? 'bg-[#4338ca] text-white border-[#4338ca]' : 'bg-white text-slate-700 border-[#dce3ed]'" class="px-3 py-2 rounded-lg border text-xs font-semibold">
-                                    {{ $label }}
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Plages de location par jour et créneau (max 5) --}}
+                {{-- Tarification & plages de location (mode unique ou jusqu'à 5 plages) --}}
                 @include('places.partials.rental-rules-editor')
 
                 {{-- Délai d'annulation --}}

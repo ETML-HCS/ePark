@@ -62,25 +62,6 @@
                     <textarea id="caracteristiques" name="caracteristiques" rows="4" class="ep-input">{{ old('caracteristiques', $place->caracteristiques) }}</textarea>
                 </div>
 
-                <div>
-                    <label for="hourly_price" class="block text-sm font-semibold mb-1.5">Tarif horaire par défaut (CHF) <span class="text-rose-700">*</span></label>
-                    <div class="flex items-center gap-3">
-                        <div class="relative flex-1">
-                            <input
-                                type="number"
-                                id="hourly_price"
-                                name="hourly_price"
-                                value="{{ old('hourly_price', number_format(($place->hourly_price_cents ?? 0) / 100, 2, '.', '')) }}"
-                                min="0"
-                                step="0.05"
-                                class="ep-input pr-14"
-                                required>
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">CHF/h</span>
-                        </div>
-                        <button type="button" onclick="document.getElementById('hourly_price').value='0.00'" class="booking-secondary">Gratuit</button>
-                    </div>
-                </div>
-
                 @include('places.partials.rental-rules-editor', ['place' => $place])
 
                 <div class="flex flex-wrap justify-end gap-3 pt-4 border-t border-[#dce3ed]">
