@@ -1,7 +1,9 @@
-export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {}) => ({
+export default ({ initialRules = [], initialMode = null, defaultPrice = '2.00', maxRules = 5 } = {}) => ({
     maxRules,
     defaultPrice: String(defaultPrice ?? '2.00'),
-    pricingMode: Array.isArray(initialRules) && initialRules.length > 0 ? 'rules' : 'single',
+    pricingMode: initialMode === 'rules' || initialMode === 'single'
+        ? initialMode
+        : (Array.isArray(initialRules) && initialRules.length > 0 ? 'rules' : 'single'),
     nextUid: 1,
     rules: [],
     dayOptions: [
@@ -85,7 +87,7 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
                 label: String(rule.label ?? ''),
                 days: Array.isArray(rule.days) ? rule.days.map((d) => Number(d)) : [],
                 segments: Array.isArray(rule.segments) ? rule.segments.map((s) => String(s)) : [],
-                hourly_price: rule.hourly_price !== undefined
+                hourly_price: rule.hourly_price !== undefined && rule.hourly_price !== ''
                     ? Number(rule.hourly_price).toFixed(2)
                     : (rule.hourly_price_cents !== undefined ? (Number(rule.hourly_price_cents) / 100).toFixed(2) : this.defaultPrice),
             }));
@@ -95,15 +97,21 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
         return Math.max(0, this.maxRules - this.rules.length);
     },
     get hasOverlap() {
-        const seen = new Set();
-        for (const rule of this.rules) {
+        const seenExact = new Map();
+        for (let i = 0; i < this.rules.length; i++) {
+            const rule = this.rules[i];
+            const expandedSegments = new Set(rule.segments);
+            if (rule.segments.includes('journee')) {
+                expandedSegments.add('matin_travail');
+                expandedSegments.add('aprem_travail');
+            }
             for (const day of rule.days) {
-                for (const seg of rule.segments) {
+                for (const seg of expandedSegments) {
                     const key = `${day}:${seg}`;
-                    if (seen.has(key)) {
+                    if (seenExact.has(key) && seenExact.get(key) !== i) {
                         return true;
                     }
-                    seen.add(key);
+                    seenExact.set(key, i);
                 }
             }
         }
@@ -119,6 +127,9 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
     },
     applyComboSemaineWeekend() {
         this.pricingMode = 'rules';
+        const paid = this.defaultPrice !== '' && Number(this.defaultPrice) > 0
+            ? Number(this.defaultPrice).toFixed(2)
+            : '2.00';
         this.rules = [
             {
                 uid: this.nextUid++,
@@ -132,7 +143,22 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
                 label: 'Week-end',
                 days: [6, 0],
                 segments: ['matin_travail', 'aprem_travail', 'journee'],
-                hourly_price: this.defaultPrice && Number(this.defaultPrice) > 0 ? Number(this.defaultPrice).toFixed(2) : '2.00',
+                hourly_price: paid,
+            },
+        ];
+    },
+    applyComboSemaineTravail() {
+        this.pricingMode = 'rules';
+        const paid = this.defaultPrice !== '' && Number(this.defaultPrice) > 0
+            ? Number(this.defaultPrice).toFixed(2)
+            : '2.00';
+        this.rules = [
+            {
+                uid: this.nextUid++,
+                label: 'Semaine travail',
+                days: [1, 2, 3, 4, 5],
+                segments: ['matin_travail', 'aprem_travail', 'journee'],
+                hourly_price: paid,
             },
         ];
     },
@@ -184,13 +210,13 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
         rule.hourly_price = String(value);
     },
     isFree(rule) {
-        return Number(rule.hourly_price || 0) === 0;
+        return rule.hourly_price !== '' && rule.hourly_price !== null && Number(rule.hourly_price) === 0;
     },
     visualBands: [
-        { key: 'matin', label: 'Matin', hours: '08h–12h', segments: ['matin_travail', 'journee'] },
-        { key: 'aprem', label: 'Ap.-midi', hours: '12h–17h30', segments: ['aprem_travail', 'journee'] },
-        { key: 'soir', label: 'Soir', hours: '18h–00h', segments: ['soir'] },
-        { key: 'nuit', label: 'Nuit', hours: '00h–07h30', segments: ['nuit'] },
+        { key: 'matin', label: 'Matin', hours: '08h–12h', primary: 'matin_travail', fallback: 'journee' },
+        { key: 'aprem', label: 'Ap.-midi', hours: '12h–17h30', primary: 'aprem_travail', fallback: 'journee' },
+        { key: 'soir', label: 'Soir', hours: '18h–00h', primary: 'soir', fallback: null },
+        { key: 'nuit', label: 'Nuit', hours: '00h–07h30', primary: 'nuit', fallback: null },
     ],
     paidPalettes: [
         { cell: 'bg-[#4338ca] text-white', dot: 'bg-[#4338ca]' },
@@ -202,14 +228,14 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
     get sortedPaidRates() {
         const set = new Set();
         for (const rule of this.rules) {
-            if (!rule.days.length || !rule.segments.length) continue;
-            const cents = Math.max(0, Math.round(Number(rule.hourly_price || 0) * 100));
+            if (!rule.days.length || !rule.segments.length || rule.hourly_price === '') continue;
+            const cents = Math.max(0, Math.round(Number(rule.hourly_price) * 100));
             if (cents > 0) set.add(cents);
         }
         return Array.from(set).sort((a, b) => a - b);
     },
     get hasFreeRule() {
-        return this.rules.some((rule) => rule.days.length && rule.segments.length && Math.round(Number(rule.hourly_price || 0) * 100) === 0);
+        return this.rules.some((rule) => rule.days.length && rule.segments.length && this.isFree(rule));
     },
     paletteForCents(cents) {
         if (cents === 0) {
@@ -247,9 +273,9 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
     },
     get liveSummaries() {
         return this.rules
-            .filter((r) => r.days.length && r.segments.length)
+            .filter((r) => r.days.length && r.segments.length && r.hourly_price !== '')
             .map((r) => {
-                const cents = Math.max(0, Math.round(Number(r.hourly_price || 0) * 100));
+                const cents = Math.max(0, Math.round(Number(r.hourly_price) * 100));
                 return {
                     uid: r.uid,
                     days: this.formatDaysSummary(r.days),
@@ -261,23 +287,40 @@ export default ({ initialRules = [], defaultPrice = '2.00', maxRules = 5 } = {})
             });
     },
     cellFor(dayId, band) {
+        let matchedRule = null;
+        let viaFallbackOnly = false;
+
         for (const rule of this.rules) {
-            if (!rule.days.includes(dayId)) continue;
-            const matches = band.segments.some((seg) => rule.segments.includes(seg));
-            if (matches) {
-                const cents = Math.max(0, Math.round(Number(rule.hourly_price || 0) * 100));
-                const palette = this.paletteForCents(cents);
-                const dayLabel = this.dayOptions.find((d) => d.id === dayId)?.short || '';
-                const labelSuffix = rule.label ? ` (${rule.label})` : '';
-                return {
-                    open: true,
-                    text: this.formatCompactCents(cents),
-                    cellClass: palette.cell,
-                    title: `${dayLabel} · ${band.label} (${band.hours}) : ${this.formatFullCents(cents)}${labelSuffix}`,
-                };
+            if (rule.days.includes(dayId) && rule.segments.includes(band.primary)) {
+                matchedRule = rule;
+                break;
             }
         }
+
+        if (!matchedRule && band.fallback) {
+            for (const rule of this.rules) {
+                if (rule.days.includes(dayId) && rule.segments.includes(band.fallback)) {
+                    matchedRule = rule;
+                    viaFallbackOnly = true;
+                    break;
+                }
+            }
+        }
+
         const dayLabel = this.dayOptions.find((d) => d.id === dayId)?.short || '';
+        if (matchedRule) {
+            const cents = Math.max(0, Math.round(Number(matchedRule.hourly_price || 0) * 100));
+            const palette = this.paletteForCents(cents);
+            const labelSuffix = matchedRule.label ? ` (${matchedRule.label})` : '';
+            const fullDaySuffix = viaFallbackOnly ? ' — journée complète uniquement' : '';
+            return {
+                open: true,
+                text: this.formatCompactCents(cents),
+                cellClass: palette.cell + (viaFallbackOnly ? ' opacity-85' : ''),
+                title: `${dayLabel} · ${band.label} (${band.hours}) : ${this.formatFullCents(cents)}${labelSuffix}${fullDaySuffix}`,
+            };
+        }
+
         return {
             open: false,
             text: '',

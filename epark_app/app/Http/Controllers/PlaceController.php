@@ -154,6 +154,7 @@ class PlaceController extends Controller
             'group_allowed_email_domains_raw' => 'nullable|string|max:1000',
         ], $this->rentalRulesValidationRules()), [
             'site_nom.unique' => 'Vous avez déjà un site portant ce nom.',
+            'rental_rules.required_if' => 'Ajoutez au moins une plage de location ou sélectionnez le tarif unique.',
             'rental_rules.max' => 'Vous pouvez définir au maximum '.Place::MAX_RENTAL_RULES.' plages de location.',
             'rental_rules.*.days.required' => 'Chaque plage de location doit contenir au moins un jour.',
             'rental_rules.*.segments.required' => 'Chaque plage de location doit contenir au moins un créneau.',
@@ -324,6 +325,7 @@ class PlaceController extends Controller
             'cancel_deadline_hours' => 'nullable|integer|in:12,24',
             'is_active' => 'nullable|boolean',
         ], $this->rentalRulesValidationRules()), [
+            'rental_rules.required_if' => 'Ajoutez au moins une plage de location ou sélectionnez le tarif unique.',
             'rental_rules.max' => 'Vous pouvez définir au maximum '.Place::MAX_RENTAL_RULES.' plages de location.',
             'rental_rules.*.days.required' => 'Chaque plage de location doit contenir au moins un jour.',
             'rental_rules.*.segments.required' => 'Chaque plage de location doit contenir au moins un créneau.',
@@ -408,8 +410,9 @@ class PlaceController extends Controller
         $validSegments = implode(',', array_keys(BookingPeriod::SEGMENTS));
 
         return [
+            'pricing_mode' => 'nullable|in:single,rules',
             'rental_rules_present' => 'nullable|boolean',
-            'rental_rules' => 'nullable|array|max:'.Place::MAX_RENTAL_RULES,
+            'rental_rules' => 'required_if:pricing_mode,rules|nullable|array|max:'.Place::MAX_RENTAL_RULES,
             'rental_rules.*.label' => 'nullable|string|max:60',
             'rental_rules.*.days' => 'required|array|min:1',
             'rental_rules.*.days.*' => 'integer|between:0,6',

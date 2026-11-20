@@ -258,4 +258,83 @@ class PlaceRentalRulesTest extends TestCase
         $this->assertFalse($place->hasRentalRules());
         $this->assertSame(300, $place->hourly_price_cents);
     }
+
+    public function test_rules_mode_requires_at_least_one_rule(): void
+    {
+        $owner = $this->createOnboardedUser('proprietaire');
+        $site = $owner->sites()->firstOrFail();
+
+        $this->actingAs($owner)
+            ->post('/places', [
+                'site_id' => $site->id,
+                'nom' => 'Place Sans Plage',
+                'pricing_mode' => 'rules',
+                'rental_rules_present' => '1',
+            ])
+            ->assertSessionHasErrors('rental_rules');
+    }
+
+    public function test_rescheduling_from_paid_weekend_to_free_weekday_recalculates_and_marks_paid(): void
+    {
+        $owner = $this->createOnboardedUser('proprietaire');
+        $tenant = $this->createOnboardedUser('locataire');
+        $site = $owner->sites()->firstOrFail();
+
+        $place = Place::factory()->create([
+            'user_id' => $owner->id,
+            'site_id' => $site->id,
+            'is_active' => true,
+            'hourly_price_cents' => 0,
+            'cancel_deadline_hours' => 12,
+            'rental_rules_json' => [
+                [
+                    'label' => 'Semaine journée',
+                    'days' => [1, 2, 3, 4, 5],
+                    'segments' => ['matin_travail', 'aprem_travail', 'journee'],
+                    'hourly_price_cents' => 0,
+                ],
+                [
+                    'label' => 'Week-end',
+                    'days' => [6, 0],
+                    'segments' => ['journee'],
+                    'hourly_price_cents' => 200,
+                ],
+            ],
+        ]);
+
+        $saturday = Carbon::now()->addDays(4)->next(Carbon::SATURDAY);
+        $monday = $saturday->copy()->next(Carbon::MONDAY);
+
+        // Réserver le samedi payant
+        $this->actingAs($tenant)
+            ->postJson('/express/book', [
+                'place_id' => $place->id,
+                'date' => $saturday->toDateString(),
+                'segment' => 'journee',
+            ])
+            ->assertOk();
+
+        $reservation = Reservation::where('place_id', $place->id)->firstOrFail();
+        $this->assertSame(1900, $reservation->amount_cents);
+        $this->assertSame('pending', $reservation->payment_status);
+
+        // La page d'édition affiche la grille des plages & tarifs
+        $this->actingAs($tenant)
+            ->get(route('reservations.edit', $reservation))
+            ->assertOk()
+            ->assertSee('Grille hebdomadaire des disponibilités et tarifs');
+
+        // Reprogrammer vers le lundi gratuit
+        $this->actingAs($tenant)
+            ->put(route('reservations.update', $reservation), [
+                'date' => $monday->toDateString(),
+                'segment' => 'journee',
+            ])
+            ->assertRedirect(route('reservations.show', $reservation));
+
+        $reservation->refresh();
+        $this->assertSame(0, $reservation->amount_cents);
+        $this->assertSame('paid', $reservation->payment_status);
+        $this->assertTrue((bool) $reservation->paiement_effectue);
+    }
 }

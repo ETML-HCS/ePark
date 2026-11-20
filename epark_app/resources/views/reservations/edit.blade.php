@@ -21,6 +21,13 @@
             </div>
         @endif
 
+        @if($place?->hasRentalRules())
+            <section class="ep-card p-5 mb-6">
+                <h2 class="text-sm font-bold mb-3">Plages &amp; tarifs de cette place</h2>
+                @include('places.partials.weekly-visual-calendar', ['place' => $place])
+            </section>
+        @endif
+
         <section class="ep-card p-6">
             <form method="POST" action="{{ route('reservations.update', $reservation) }}" class="space-y-5">
                 @csrf

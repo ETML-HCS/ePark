@@ -24,7 +24,6 @@
         <section class="ep-card p-6 sm:p-8">
             <form method="POST" action="{{ route('places.store') }}" class="space-y-6" x-data="{
                 newSite: {{ $sites->isEmpty() || old('create_new_site') == '1' ? 'true' : 'false' }},
-                price: '{{ old('hourly_price', '2.00') }}',
                 cancelDeadline: '{{ old('cancel_deadline_hours', '24') }}',
                 characteristics: @js(old('caracteristiques', '')),
                 isGroupReserved: {{ old('is_group_reserved', '0') == '1' ? 'true' : 'false' }},

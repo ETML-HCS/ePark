@@ -256,16 +256,14 @@ class Place extends Model
     /**
      * Résumé lisible des plages personnalisées pour l'affichage sur les cartes.
      *
-     * @return array<int, array{label: string, days: string, segments: string, price: string, is_free: bool}>
+     * @return array<int, array{label: string, days: string, segments: string, price: string, hourly_price_cents: int, is_free: bool}>
      */
     public function rentalRuleSummaries(): array
     {
         return collect($this->normalizedRentalRules())
             ->map(function (array $rule): array {
                 $daysText = self::formatDaysLabel($rule['days']);
-                $segmentsText = collect($rule['segments'])
-                    ->map(fn (string $seg) => BookingPeriod::SEGMENTS[$seg]['label'] ?? $seg)
-                    ->implode(', ');
+                $segmentsText = self::formatSegmentsLabel($rule['segments']);
                 $isFree = $rule['hourly_price_cents'] === 0;
 
                 return [
@@ -273,10 +271,33 @@ class Place extends Model
                     'days' => $daysText,
                     'segments' => $segmentsText,
                     'price' => $isFree ? 'Gratuit' : format_chf($rule['hourly_price_cents'] / 100).'/h',
+                    'hourly_price_cents' => $rule['hourly_price_cents'],
                     'is_free' => $isFree,
                 ];
             })
             ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $segments
+     */
+    public static function formatSegmentsLabel(array $segments): string
+    {
+        if (in_array('journee', $segments, true)
+            && in_array('matin_travail', $segments, true)
+            && in_array('aprem_travail', $segments, true)) {
+            $others = array_values(array_diff($segments, ['journee', 'matin_travail', 'aprem_travail']));
+            $labels = ['Journée'];
+            foreach ($others as $seg) {
+                $labels[] = BookingPeriod::SEGMENTS[$seg]['label'] ?? $seg;
+            }
+
+            return implode(', ', $labels);
+        }
+
+        return collect($segments)
+            ->map(fn (string $seg) => BookingPeriod::SEGMENTS[$seg]['label'] ?? $seg)
+            ->implode(', ');
     }
 
     /**

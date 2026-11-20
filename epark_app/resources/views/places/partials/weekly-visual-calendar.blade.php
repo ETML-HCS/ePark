@@ -46,10 +46,10 @@
 @if($hasRentalRules)
     @php
         $bands = [
-            ['key' => 'matin', 'label' => 'Matin', 'full' => 'Matin (08:00–12:00)', 'segments' => ['matin_travail', 'journee'], 'start' => 480, 'end' => 720],
-            ['key' => 'aprem', 'label' => 'Ap.-m.', 'full' => 'Après-midi (12:00–17:30)', 'segments' => ['aprem_travail', 'journee'], 'start' => 720, 'end' => 1050],
-            ['key' => 'soir', 'label' => 'Soir', 'full' => 'Soir (18:00–00:00)', 'segments' => ['soir'], 'start' => 1080, 'end' => 1440],
-            ['key' => 'nuit', 'label' => 'Nuit', 'full' => 'Nuit (00:00–07:30)', 'segments' => ['nuit'], 'start' => 0, 'end' => 450],
+            ['key' => 'matin', 'label' => 'Matin', 'full' => 'Matin (08:00–12:00)', 'primary' => 'matin_travail', 'fallback' => 'journee', 'start' => 480, 'end' => 720],
+            ['key' => 'aprem', 'label' => 'Ap.-m.', 'full' => 'Après-midi (12:00–17:30)', 'primary' => 'aprem_travail', 'fallback' => 'journee', 'start' => 720, 'end' => 1050],
+            ['key' => 'soir', 'label' => 'Soir', 'full' => 'Soir (18:00–00:00)', 'primary' => 'soir', 'fallback' => null, 'start' => 1080, 'end' => 1440],
+            ['key' => 'nuit', 'label' => 'Nuit', 'full' => 'Nuit (00:00–07:30)', 'primary' => 'nuit', 'fallback' => null, 'start' => 0, 'end' => 450],
         ];
 
         $paidRates = collect($rentalRules)
@@ -73,12 +73,30 @@
             $ratePaletteMap[$cents] = $paidPalettes[$idx % count($paidPalettes)];
         }
 
-        $hasFreeBand = collect($rentalRules)->contains(fn (array $r) => $r['hourly_price_cents'] === 0);
+        $ruleSummaries = $place->rentalRuleSummaries();
         $hasAnyBlocked = false;
     @endphp
 
-    <div class="w-full {{ $compact ? '' : 'max-w-md' }}" aria-label="Grille hebdomadaire des disponibilités et tarifs">
-        <div class="grid grid-cols-[44px_repeat(7,minmax(0,1fr))] gap-1 items-center">
+    <div class="w-full {{ $compact ? '' : 'max-w-md' }} space-y-2.5" aria-label="Grille hebdomadaire des disponibilités et tarifs">
+        {{-- Résumé scannable en 1 coup d'œil --}}
+        <div class="flex flex-wrap gap-1.5">
+            @foreach($ruleSummaries as $summary)
+                @php
+                    $dotClass = $summary['is_free']
+                        ? 'bg-emerald-500'
+                        : ($ratePaletteMap[$summary['hourly_price_cents']]['dot'] ?? 'bg-[#4338ca]');
+                @endphp
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white border border-[#dce3ed] text-[11px] leading-snug">
+                    <span class="w-2 h-2 rounded-full shrink-0 {{ $dotClass }}"></span>
+                    <strong class="text-[#18263a]">{{ $summary['days'] }}</strong>
+                    <span class="text-slate-500">· {{ $summary['segments'] }}</span>
+                    <strong class="{{ $summary['is_free'] ? 'text-[#166534]' : 'text-[#4338ca]' }}">{{ $summary['price'] }}</strong>
+                </span>
+            @endforeach
+        </div>
+
+        {{-- Matrice épurée : seules les plages ouvertes sont colorées --}}
+        <div class="grid grid-cols-[40px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] gap-1 items-center">
             <div></div>
             @foreach($dayLabels as $dayIndex => $dayLabel)
                 <span class="text-center text-[10px] font-bold {{ in_array($dayIndex, [0, 6], true) ? 'text-[#4338ca]' : $labelClass }}">{{ $dayLabel }}</span>
@@ -89,14 +107,21 @@
                 @foreach($dayLabels as $dayIndex => $dayLabel)
                     @php
                         $matchedRule = null;
+                        $viaFallbackOnly = false;
+
                         foreach ($rentalRules as $rule) {
-                            if (! in_array($dayIndex, $rule['days'], true)) {
-                                continue;
+                            if (in_array($dayIndex, $rule['days'], true) && in_array($band['primary'], $rule['segments'], true)) {
+                                $matchedRule = $rule;
+                                break;
                             }
-                            foreach ($band['segments'] as $candidateSeg) {
-                                if (in_array($candidateSeg, $rule['segments'], true)) {
+                        }
+
+                        if ($matchedRule === null && $band['fallback'] !== null) {
+                            foreach ($rentalRules as $rule) {
+                                if (in_array($dayIndex, $rule['days'], true) && in_array($band['fallback'], $rule['segments'], true)) {
                                     $matchedRule = $rule;
-                                    break 2;
+                                    $viaFallbackOnly = true;
+                                    break;
                                 }
                             }
                         }
@@ -118,10 +143,14 @@
                             $cellClass = $cents === 0
                                 ? 'bg-emerald-500 text-white'
                                 : ($ratePaletteMap[$cents]['cell'] ?? 'bg-[#4338ca] text-white');
+                            if ($viaFallbackOnly) {
+                                $cellClass .= ' opacity-85';
+                            }
                             $cellText = $formatCompactPrice($cents);
                             $priceHuman = $cents === 0 ? 'Gratuit' : format_chf($cents / 100).'/h';
                             $ruleTitle = $matchedRule['label'] !== '' ? ' ('.$matchedRule['label'].')' : '';
-                            $tooltip = $dayFullNames[$dayIndex].' · '.$band['full'].' : '.$priceHuman.$ruleTitle;
+                            $fullDayNote = $viaFallbackOnly ? ' — journée complète uniquement' : '';
+                            $tooltip = $dayFullNames[$dayIndex].' · '.$band['full'].' : '.$priceHuman.$ruleTitle.$fullDayNote;
                         } else {
                             $cellClass = 'bg-slate-100/70';
                             $cellText = '';
@@ -129,7 +158,7 @@
                         }
                     @endphp
                     <div
-                        class="h-6 rounded flex items-center justify-center text-[10px] font-bold leading-none select-none cursor-help {{ $cellClass }}"
+                        class="h-6 rounded flex items-center justify-center text-[9px] sm:text-[10px] font-bold tabular-nums leading-none overflow-hidden select-none cursor-help {{ $cellClass }}"
                         title="{{ $tooltip }}">
                         {{ $cellText }}
                     </div>
@@ -137,27 +166,14 @@
             @endforeach
         </div>
 
-        {{-- Légende tarifaire --}}
-        <div class="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-slate-600">
-            @if($hasFreeBand)
-                <span class="inline-flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block"></span>
-                    0.- = Gratuit
-                </span>
-            @endif
-            @foreach($paidRates as $cents)
-                <span class="inline-flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-sm {{ $ratePaletteMap[$cents]['dot'] }} inline-block"></span>
-                    {{ format_chf($cents / 100) }}/h
-                </span>
-            @endforeach
-            @if($hasAnyBlocked)
+        @if($hasAnyBlocked)
+            <div class="flex items-center justify-center gap-2 text-[10px] text-slate-600">
                 <span class="inline-flex items-center gap-1">
                     <span class="w-2.5 h-2.5 rounded-sm bg-rose-200 border border-rose-300 inline-block"></span>
-                    Bloqué
+                    ✕ = bloqué ponctuellement
                 </span>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 @else
     @php

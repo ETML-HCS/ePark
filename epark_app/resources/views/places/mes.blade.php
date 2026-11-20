@@ -88,20 +88,6 @@
                                 @endif
                             </div>
 
-                            @if($place->hasRentalRules())
-                                <ul class="mt-3 space-y-1.5 text-xs text-slate-600">
-                                    @foreach($place->rentalRuleSummaries() as $ruleSummary)
-                                        <li class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-[#f3f6fa] border border-[#dce3ed]">
-                                            <span class="truncate">
-                                                <strong class="text-[#18263a]">{{ $ruleSummary['days'] }}</strong>
-                                                · {{ $ruleSummary['segments'] }}
-                                            </span>
-                                            <span class="font-semibold shrink-0 {{ $ruleSummary['is_free'] ? 'text-[#166534]' : 'text-[#4338ca]' }}">{{ $ruleSummary['price'] }}</span>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
                             <div class="flex items-center gap-2 mt-auto pt-5 border-t border-[#dce3ed]">
                                 <a href="{{ route('places.blocked-slots.edit', $place->id) }}" class="booking-primary flex-1 !min-h-[40px] !py-2 !text-xs">
                                     Disponibilités
